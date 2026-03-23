@@ -1,6 +1,12 @@
 package com.example.Simple.Forum.System.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 // 帖子实体类，存储论坛帖子的所有信息
+@Data
+@NoArgsConstructor
 public class Post {
     private String id;          // 帖子唯一标识
     private String title;       // 帖子标题
@@ -13,9 +19,7 @@ public class Post {
     private int comments;       // 评论数
     private String status;      // 审核状态：pending-待审核，approved-已通过，rejected-已驳回
     private String rejectReason; // 驳回理由
-    
-    public Post() {}
-    
+
     // 构造函数：初始化帖子基本信息
     public Post(String id, String title, String content, String author, String forum, 
                 String tags, String createTime) {
@@ -33,7 +37,7 @@ public class Post {
     }
     
     // Getter 和 Setter 方法
-    public String getId() { return id; }
+  /*  public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -54,5 +58,5 @@ public class Post {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public String getRejectReason() { return rejectReason; }
-    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
+    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }*/
 }
