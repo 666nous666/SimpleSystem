@@ -1,0 +1,15 @@
+model/：添加新用户类型只需继承User类
+
+service/：业务逻辑独立，可随时替换实现
+
+repository/：可以轻松替换为MySQL数据库
+
+util/：工具类可复用
+
+controller/：API接口层，可添加更多认证功能
+
+管理员：admin / admin123
+
+版主：moderator / mod123
+
+普通用户：user1 / user123

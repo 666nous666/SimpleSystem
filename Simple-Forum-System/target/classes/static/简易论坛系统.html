@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易论坛</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        :root {
+            --primary: #3498db; --dark: #2c3e50; --light: #f8f9fa;
+            --gray: #95a5a6; --success: #27ae60; --danger: #e74c3c;
+        }
+        body { background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        header { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 15px 0; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--dark); }
+        .logo i { color: var(--primary); margin-right: 8px; }
+        .nav { display: flex; background: var(--dark); }
+        .nav a { color: white; text-decoration: none; padding: 15px 20px; transition: 0.3s; }
+        .nav a:hover, .nav a.active { background: var(--primary); }
+        .main { display: flex; margin: 30px 0; gap: 30px; }
+        .sidebar { flex: 0 0 250px; }
+        .content { flex: 1; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
+        .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; color: var(--dark); }
+        .btn { padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .post-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .post-title { font-weight: 600; margin-bottom: 5px; }
+        .post-title a { color: var(--dark); text-decoration: none; }
+        .post-meta { color: var(--gray); font-size: 0.9rem; }
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; cursor: pointer; }
+        .tab.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 8px; max-width: 500px; width: 100%; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
+        .modal-body { padding: 20px; }
+        footer { background: var(--dark); color: white; padding: 30px 0; margin-top: 50px; }
+        @media (max-width: 768px) { .main { flex-direction: column; } .sidebar { width: 100%; } }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container header-content">
+        <div class="logo"><i class="fas fa-comments"></i>简易论坛</div>
+        <div style="display: flex; align-items: center;">
+            <div id="userInfo" style="margin-right: 15px; color: var(--dark); font-size: 0.9rem;"></div>
+            <button onclick="logout()" class="btn" style="background-color: #dc3545; color: white; margin-right: 15px; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">退出登录</button>
+            <div id="userAvatar" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; cursor: pointer;">
+                <img src="https://ui-avatars.com/api/?name=用户&background=3498db&color=fff" alt="用户" style="width: 100%; height: 100%;">
+            </div>
+        </div>
+    </div>
+</header>
+
+<nav class="nav">
+    <div class="container" style="display: flex;">
+        <a href="#" class="active" data-tab="home">首页</a>
+        <a href="#" data-tab="forums">板块</a>
+        <a href="#" data-tab="new-post">发帖</a>
+        <a href="#" data-tab="personal">个人中心</a>
+        <a href="#" data-tab="admin" id="adminTab">管理</a>
+    </div>
+</nav>
+
+<div class="container main">
+    <aside class="sidebar">
+        <div class="card">
+            <h3 class="card-title">热门板块</h3>
+            <div id="popularForums"></div>
+        </div>
+        <div class="card">
+            <h3 class="card-title">今日热帖</h3>
+            <div id="hotPosts"></div>
+        </div>
+    </aside>
+
+    <main class="content">
+        <div id="home" class="tab-content active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <h2 class="card-title">最新帖子</h2>
+                </div>
+                <div id="postList"></div>
+            </div>
+        </div>
+
+        <div id="forums" class="tab-content">
+            <div class="card"><h2 class="card-title">论坛板块</h2><div id="forumList"></div></div>
+        </div>
+
+        <div id="new-post" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">发布新帖</h2>
+                <div class="form-group">
+                    <input type="text" class="form-control" placeholder="标题" id="postTitle" maxlength="50">
+                    <select class="form-control" id="postForum">
+                        <option value="">选择板块</option>
+                        <option value="生活分享">生活分享</option>
+                        <option value="技术讨论">技术讨论</option>
+                        <option value="娱乐八卦">娱乐八卦</option>
+                    </select>
+                    <textarea class="form-control" placeholder="内容" rows="5" id="postContent"></textarea>
+                    <input type="text" class="form-control" placeholder="标签（用逗号分隔）" id="postTags">
+                    <div style="margin-top: 20px;">
+                        <button type="button" class="btn btn-primary" id="submitPost">发布</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="personal" class="tab-content">
+            <div class="tabs">
+                <div class="tab active" data-tab="my-posts">我的帖子</div>
+            </div>
+            <div id="my-posts" class="tab-content active">
+                <div class="card"><h3 class="card-title">我的帖子</h3><div id="myPostList"></div></div>
+            </div>
+        </div>
+
+        <div id="admin" class="tab-content">
+            <div class="tabs">
+                <div class="tab active" data-tab="admin-users" id="adminUsersTab">用户管理</div>
+                <div class="tab" data-tab="admin-review" id="reviewTab" style="display: none;">帖子审核</div>
+            </div>
+            <div id="admin-users" class="tab-content active">
+                <div class="card">
+                    <h3 class="card-title">用户管理</h3>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead><tr><th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">用户名</th><th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">状态</th><th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">操作</th></tr></thead>
+                            <tbody id="userTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 帖子审核界面 -->
+            <div id="admin-review" class="tab-content">
+                <div class="card">
+                    <h3 class="card-title">待审核帖子</h3>
+                    <div id="pendingPostsList" style="margin-bottom: 20px;"></div>
+
+                    <h3 class="card-title" style="margin-top: 30px;">已通过帖子</h3>
+                    <div id="approvedPostsList"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<footer>
+    <div class="container" style="text-align: center;">
+        <p>© 2026 简易论坛系统</p>
+        <p>遵循相关法律法规，共建和谐社区</p>
+    </div>
+</footer>
+
+<!-- 驳回理由弹窗 -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>驳回帖子</h3>
+            <button onclick="closeRejectModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 15px;">请说明驳回理由（可选）：</p>
+            <textarea id="rejectReasonText" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="请输入驳回理由..."></textarea>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="confirmReject()" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">确认驳回</button>
+                <button onclick="closeRejectModal()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const mockData = {
+        forums: [
+            { id: 1, name: "生活分享", desc: "分享日常点滴", posts: 245, today: 12 },
+            { id: 2, name: "技术讨论", desc: "编程技术交流", posts: 189, today: 8 },
+            { id: 3, name: "娱乐八卦", desc: "影视音乐娱乐", posts: 156, today: 5 }
+        ],
+        posts: [],
+        users: [
+            { id: 1, name: "编程小能手", email: "coder@example.com", status: "正常" },
+            { id: 2, name: "旅行爱好者", email: "travel@example.com", status: "正常" }
+        ]
+    };
+
+    let currentUser = { loggedIn: false, username: "", role: "guest", level: 2 };
+    let currentRejectPostId = null;  // 当前要驳回的帖子 ID
+
+    function loadCurrentUser() {
+        try {
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                const parsedData = JSON.parse(userData);
+                currentUser = {
+                    loggedIn: true,
+                    username: parsedData.username,
+                    role: parsedData.role,
+                    level: parsedData.level
+                };
+            }
+        } catch (e) {
+            console.error('读取用户信息失败:', e);
+        }
+    }
+
+    function checkLogin() {
+        if(!currentUser.loggedIn) {
+            alert('请先登录！');
+            window.location.href = '/login.html';
+            return false;
+        }
+        return true;
+    }
+
+    function initUserState() {
+        loadCurrentUser();
+        if (currentUser.loggedIn) {
+            document.getElementById('userInfo').textContent = `${currentUser.username} | ${currentUser.role}`;
+            if (currentUser.level === 0) {
+                // 管理员显示所有管理功能（用户管理 + 帖子审核）
+                document.getElementById('adminTab').style.display = 'block';
+                document.getElementById('adminUsersTab').style.display = 'block';
+                document.getElementById('reviewTab').style.display = 'none';
+            } else if (currentUser.level === 1) {
+                // 版主只显示审核功能，隐藏用户管理
+                document.getElementById('adminTab').style.display = 'block';
+                document.getElementById('adminUsersTab').style.display = 'none';
+                document.getElementById('reviewTab').style.display = 'block';
+            } else {
+                document.getElementById('adminTab').style.display = 'none';
+                document.getElementById('adminUsersTab').style.display = 'none';
+                document.getElementById('reviewTab').style.display = 'none';
+            }
+            document.getElementById('userAvatar').innerHTML = 
+                `<img src="https://ui-avatars.com/api/?name=${currentUser.username}&background=3498db&color=fff" alt="用户" style="width: 100%; height: 100%;">`;
+        } else {
+            setTimeout(() => {
+                alert('请先登录！');
+                window.location.href = '/login.html';
+            }, 100);
+        }
+    }
+
+    async function loadPosts() {
+        try {
+            const response = await fetch('/api/post/all');
+            const data = await response.json();
+            if (data.success) {
+                mockData.posts = data.posts;
+                renderPosts();
+                renderMyPosts();
+                if (currentUser.level <= 1) {
+                    loadPendingPosts();
+                }
+            }
+        } catch (error) {
+            console.error('加载帖子失败:', error);
+        }
+    }
+
+    function renderPosts() {
+        // 只显示已通过的帖子给普通用户
+        const approvedPosts = mockData.posts.filter(p => p.status === 'approved' || p.status === undefined);
+        document.getElementById('postList').innerHTML = approvedPosts.map(p =>
+            `<div class="post-item">
+                <div class="post-title"><a href="#" onclick="showPost('${p.id}')">${p.title}</a></div>
+                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)} • ${p.comments}评论</div>
+            </div>`
+        ).join('');
+
+        document.getElementById('hotPosts').innerHTML = approvedPosts.slice(0,3).map(p =>
+            `<div class="post-item">
+                <div class="post-title">${p.title}</div>
+                <div class="post-meta">${p.author} • ${p.votes}赞</div>
+            </div>`
+        ).join('');
+    }
+
+    function renderMyPosts() {
+        const myPosts = mockData.posts.filter(p => p.author === currentUser.username);
+        document.getElementById('myPostList').innerHTML = myPosts.map(p => {
+            let statusText = '';
+            if (p.status === 'pending') {
+                statusText = '<span style="color: #f39c12; font-size: 0.85rem;"> • 待审核</span>';
+            } else if (p.status === 'approved') {
+                statusText = '<span style="color: var(--success); font-size: 0.85rem;"> • 已通过</span>';
+            } else if (p.status === 'rejected') {
+                statusText = '<span style="color: var(--danger); font-size: 0.85rem;"> • 已驳回</span>';
+            }
+            return `<div class="post-item">
+                <div class="post-title">${p.title}${statusText}</div>
+                <div class="post-meta">${p.forum} • ${formatTime(p.createTime)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function formatTime(timeStr) {
+        if (!timeStr) return '';
+        return timeStr.replace('T', ' ').substring(0, 16);
+    }
+
+    function loadData() {
+        document.getElementById('popularForums').innerHTML = mockData.forums.map(f => 
+            `<div class="post-item">
+                <div class="post-title">${f.name}</div>
+                <div class="post-meta">${f.posts}帖子 ${f.today}今日</div>
+            </div>`
+        ).join('');
+
+        document.getElementById('forumList').innerHTML = mockData.forums.map(f => 
+            `<div class="post-item">
+                <div class="post-title">${f.name}</div>
+                <div class="post-meta">${f.desc} • ${f.posts}帖子</div>
+            </div>`
+        ).join('');
+
+        document.getElementById('userTable').innerHTML = mockData.users.map(u => 
+            `<tr>
+                <td style="padding: 10px;">${u.name}</td>
+                <td style="padding: 10px;">${u.status}</td>
+                <td style="padding: 10px;">
+                    <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.9rem;">
+                        ${u.status==='正常'?'冻结':'解封'}
+                    </button>
+                </td>
+            </tr>`
+        ).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initUserState();
+        loadPosts();
+        loadData();
+        
+        document.querySelectorAll('.nav a').forEach(a => 
+            a.addEventListener('click', e => { 
+                e.preventDefault(); 
+                showTab(e.target.getAttribute('data-tab')); 
+            })
+        );
+
+        document.getElementById('submitPost').addEventListener('click', async () => {
+            if(!checkLogin()) return;
+            
+            const title = document.getElementById('postTitle').value;
+            const forum = document.getElementById('postForum').value;
+            const content = document.getElementById('postContent').value;
+            const tags = document.getElementById('postTags').value;
+
+            if(!title) { alert('请输入标题'); return; }
+            if(!forum) { alert('请选择板块'); return; }
+            if(!content) { alert('请输入内容'); return; }
+
+            try {
+                const response = await fetch('/api/post/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        content: content,
+                        author: currentUser.username,
+                        forum: forum,
+                        tags: tags
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('帖子发布成功！请等待版主审核。');
+                    document.getElementById('postTitle').value = '';
+                    document.getElementById('postContent').value = '';
+                    document.getElementById('postTags').value = '';
+                    await loadPosts();
+                    showTab('home');
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('发帖失败：' + error);
+            }
+        });
+    });
+
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active');
+
+        // 处理导航栏激活状态
+        const navLink = document.querySelector(`.nav a[data-tab="${tabId}"]`);
+        if (navLink) {
+            navLink.classList.add('active');
+        }
+
+        // 处理子标签激活状态
+        const subTab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+        if (subTab) {
+            subTab.classList.add('active');
+        }
+
+        if(tabId==='personal'&&!currentUser.loggedIn) { checkLogin(); showTab('home'); }
+        if(tabId==='admin'&&currentUser.level!==0 && currentUser.level!==1) { alert('无权限'); showTab('home'); }
+
+        if (tabId === 'admin-review') {
+            loadPendingPosts();
+        }
+
+        if (tabId === 'admin') {
+            // 根据用户角色默认显示不同的子标签
+            if (currentUser.level === 1) {
+                // 版主默认显示审核界面
+                document.getElementById('admin-review').classList.add('active');
+                document.querySelector('.tab[data-tab="admin-review"]').classList.add('active');
+            } else {
+                // 管理员默认显示用户管理
+                document.getElementById('admin-users').classList.add('active');
+                document.querySelector('.tab[data-tab="admin-users"]').classList.add('active');
+            }
+        }
+    }
+
+    async function showPost(id) {
+        try {
+            const response = await fetch(`/api/post/${id}`);
+            const data = await response.json();
+            if (data.success) {
+                const post = data.post;
+                document.querySelector('.content').innerHTML = 
+                    `<div class="tab-content active">
+                        <div class="card">
+                            <h2 class="card-title">${post.title}</h2>
+                            <div class="post-meta">${post.author} • ${post.forum} • ${formatTime(post.createTime)}</div>
+                            <p style="margin: 20px 0; white-space: pre-wrap; line-height: 1.8;">${post.content}</p>
+                            ${post.tags ? `<div style="margin: 15px 0;"><span style="color: var(--gray);">标签：</span>${post.tags.split(',').map(t => '<span style="background: #e3f2fd; color: #1976d2; padding: 3px 8px; border-radius: 3px; margin-right: 5px; font-size: 0.85rem;">'+t.trim()+'</span>').join('')}</div>` : ''}
+                            <div style="margin-top: 30px;">
+                                <button class="btn btn-primary" onclick="location.reload()">返回</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        } catch (error) {
+            alert('加载帖子失败');
+        }
+    }
+
+    function logout() {
+        if (confirm('确定要退出登录吗？')) {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login.html';
+        }
+    }
+
+    // 加载待审核帖子列表
+    async function loadPendingPosts() {
+        try {
+            const response = await fetch('/api/post/pending');
+            const data = await response.json();
+            if (data.success) {
+                renderPendingPosts(data.posts);
+            }
+
+            const response2 = await fetch('/api/post/approved');
+            const data2 = await response2.json();
+            if (data2.success) {
+                renderApprovedPosts(data2.posts);
+            }
+        } catch (error) {
+            console.error('加载审核帖子失败:', error);
+        }
+    }
+
+    function renderPendingPosts(posts) {
+        if (posts.length === 0) {
+            document.getElementById('pendingPostsList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无待审核帖子</p>';
+            return;
+        }
+
+        document.getElementById('pendingPostsList').innerHTML = posts.map(p =>
+            `<div class="post-item" style="border-left: 4px solid var(--primary); padding-left: 15px;">
+                <div class="post-title">${p.title}</div>
+                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)}</div>
+                <div style="margin-top: 10px;">
+                    <button onclick="approvePost('${p.id}')" class="btn" style="background-color: var(--success); color: white; padding: 5px 12px; margin-right: 10px;">通过</button>
+                    <button onclick="openRejectModal('${p.id}')" class="btn" style="background-color: var(--danger); color: white; padding: 5px 12px;">驳回</button>
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    function renderApprovedPosts(posts) {
+        if (posts.length === 0) {
+            document.getElementById('approvedPostsList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无已通过帖子</p>';
+            return;
+        }
+
+        document.getElementById('approvedPostsList').innerHTML = posts.map(p =>
+            `<div class="post-item" style="border-left: 4px solid var(--success); padding-left: 15px;">
+                <div class="post-title">${p.title}</div>
+                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)}</div>
+                <div style="margin-top: 10px; color: var(--success); font-size: 0.9rem;">
+                    <i class="fas fa-check-circle"></i> 已通过
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    // 通过帖子
+    async function approvePost(postId) {
+        if (!confirm('确认通过该帖子？')) return;
+
+        try {
+            const response = await fetch(`/api/post/approve/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('帖子已通过');
+                loadPendingPosts();
+                await loadPosts();
+            } else {
+                alert(data.message || '操作失败');
+            }
+        } catch (error) {
+            alert('操作失败：' + error);
+        }
+    }
+
+    // 打开驳回弹窗
+    function openRejectModal(postId) {
+        currentRejectPostId = postId;
+        document.getElementById('rejectReasonText').value = '';
+        document.getElementById('rejectModal').classList.add('active');
+    }
+
+    // 关闭驳回弹窗
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.remove('active');
+        currentRejectPostId = null;
+    }
+
+    // 确认驳回
+    async function confirmReject() {
+        if (!currentRejectPostId) return;
+
+        const reason = document.getElementById('rejectReasonText').value.trim();
+
+        try {
+            const response = await fetch(`/api/post/reject/${currentRejectPostId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rejectReason: reason })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('帖子已驳回' + (reason ? '：' + reason : ''));
+                closeRejectModal();
+                loadPendingPosts();
+            } else {
+                alert(data.message || '操作失败');
+            }
+        } catch (error) {
+            alert('操作失败：' + error);
+        }
+    }
+
+</script>
+</body>
+</html>

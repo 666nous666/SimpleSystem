@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>论坛系统登录</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+        .container { border: 1px solid #ccc; padding: 30px; border-radius: 5px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background-color: #007bff; color: white; padding: 10px 20px; border: none;
+            border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        button:hover { background-color: #0056b3; }
+        .message { margin-top: 20px; padding: 10px; border-radius: 4px; display: none; }
+        .success { background-color: #d4edda; color: #155724; display: block; }
+        .error { background-color: #f8d7da; color: #721c24; display: block; }
+        .info { background-color: #e2e3e5; color: #383d41; margin-top: 20px; padding: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>论坛系统登录</h2>
+
+    <!-- 登录表单 -->
+    <div class="form-group">
+        <label>用户名：</label>
+        <input type="text" id="username" placeholder="请输入用户名">
+    </div>
+    <div class="form-group">
+        <label>密码：</label>
+        <input type="password" id="password" placeholder="请输入密码">
+    </div>
+
+    <button onclick="login()">登录</button>
+    <button onclick="showRegister()" style="background-color: #28a745;">注册新账号</button>
+
+    <!-- 显示消息 -->
+    <div id="message" class="message"></div>
+
+    <!-- 测试账号提示 -->
+    <div class="info">
+        <strong>测试账号：</strong><br>
+        管理员：admin / admin123<br>
+        版主：moderator / mod123<br>
+        普通用户：user1 / user123
+    </div>
+</div>
+
+<!-- 注册弹窗（简单实现） -->
+<div id="registerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%;
+         height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: white; max-width: 400px; margin: 100px auto; padding: 30px;
+             border-radius: 5px;">
+        <h3>注册新账号</h3>
+        <div class="form-group">
+            <label>用户名：</label>
+            <input type="text" id="regUsername" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+            <label>密码：</label>
+            <input type="password" id="regPassword" placeholder="请输入密码（至少6位）">
+        </div>
+        <div class="form-group">
+            <label>确认密码：</label>
+            <input type="password" id="regConfirmPassword" placeholder="请再次输入密码">
+        </div>
+        <div class="form-group">
+            <label>注册类型：</label>
+            <select id="regLevel">
+                <option value="2">普通用户</option>
+                <option value="1">版主</option>
+                <option value="0">系统管理员</option>
+            </select>
+        </div>
+        <button onclick="register()">确认注册</button>
+        <button onclick="hideRegister()" style="background-color: #6c757d;">取消</button>
+        <div id="regMessage" class="message"></div>
+    </div>
+</div>
+
+<script>
+    // 登录功能
+    // 登录功能
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+            showMessage('请输入用户名和密码', 'error');
+            return;
+        }
+
+        fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`登录成功！欢迎 ${data.username}，您是${data.role}`, 'success');
+                    // 将用户信息存储到 localStorage
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        username: data.username,
+                        role: data.role,
+                        level: data.level,
+                        permissions: data.permissions
+                    }));
+                    // 跳转到论坛主页面
+                    setTimeout(() => {
+                        window.location.href = '/简易论坛系统.html';
+                    }, 1000);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('请求失败：' + error, 'error');
+            });
+    }
+
+
+    // 注册功能
+    function register() {
+        const username = document.getElementById('regUsername').value;
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+        const level = parseInt(document.getElementById('regLevel').value);
+
+        if (!username || !password) {
+            showRegMessage('请填写用户名和密码', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            showRegMessage('密码长度至少6位', 'error');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showRegMessage('两次输入的密码不一致', 'error');
+            return;
+        }
+
+        fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, level })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showRegMessage('注册成功！请登录', 'success');
+                    setTimeout(() => {
+                        hideRegister();
+                        document.getElementById('username').value = username;
+                        document.getElementById('password').value = '';
+                    }, 1500);
+                } else {
+                    showRegMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showRegMessage('请求失败：' + error, 'error');
+            });
+    }
+
+    // 显示消息
+    function showMessage(text, type) {
+        const msgDiv = document.getElementById('message');
+        msgDiv.textContent = text;
+        msgDiv.className = 'message ' + type;
+    }
+
+    function showRegMessage(text, type) {
+        const msgDiv = document.getElementById('regMessage');
+        msgDiv.textContent = text;
+        msgDiv.className = 'message ' + type;
+    }
+
+    // 显示/隐藏注册弹窗
+    function showRegister() {
+        document.getElementById('registerModal').style.display = 'block';
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regPassword').value = '';
+        document.getElementById('regConfirmPassword').value = '';
+        document.getElementById('regMessage').className = 'message';
+        document.getElementById('regMessage').textContent = '';
+    }
+
+    function hideRegister() {
+        document.getElementById('registerModal').style.display = 'none';
+    }
+</script>
+</body>
+</html>

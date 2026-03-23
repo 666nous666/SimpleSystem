@@ -1,0 +1,5 @@
+user1,t/Ctt6zvOZPpKAQBMNt2r/sAcML6pT2BWAceh4P9HLA=,4LYI4/4zQWemQG48TxcRXg==,2
+user2,Inp8iLAslJQQnx1evQREcnhcppjOf0RajCYrv1SspF4=,SQHBQbIqRN3SWEDto9rkqw==,2
+张三,VX2bkv53BxZSvXDIHoCHhyxGZnHxkyhC3Fiiy1KRKRQ=,Tzx8jpVy9pk/tfrhEfSv2Q==,0
+moderator,t9KJRMpEDuIUpZxnFeh6eoSH6spcMjyriNwfn45SdGY=,oX851znKGKYOetFTsifeEg==,1
+admin,cZCTkav6FeiXzcu9maJimz7VGsxAtw3mjYmw+y5BbuU=,aB1PLIB3JInA+KvsnYjBNA==,0
