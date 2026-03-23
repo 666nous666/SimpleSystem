@@ -151,6 +151,9 @@
 
                     <h3 class="card-title" style="margin-top: 30px;">已通过帖子</h3>
                     <div id="approvedPostsList"></div>
+
+                    <h3 class="card-title" style="margin-top: 30px;">举报处理</h3>
+                    <div id="reportedPostsList"></div>
                 </div>
             </div>
         </div>
@@ -182,6 +185,24 @@
     </div>
 </div>
 
+<!-- 举报弹窗 -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>举报帖子</h3>
+            <button onclick="closeReportModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 15px;">请说明举报理由：</p>
+            <textarea id="reportReasonText" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="请输入举报理由..."></textarea>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="submitReport()" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">提交举报</button>
+                <button onclick="closeReportModal()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const mockData = {
         forums: [
@@ -198,6 +219,7 @@
 
     let currentUser = { loggedIn: false, username: "", role: "guest", level: 2 };
     let currentRejectPostId = null;  // 当前要驳回的帖子 ID
+    let currentReportPostId = null;  // 当前要举报的帖子 ID
 
     function loadCurrentUser() {
         try {
@@ -278,6 +300,9 @@
             `<div class="post-item">
                 <div class="post-title"><a href="#" onclick="showPost('${p.id}')">${p.title}</a></div>
                 <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)} • ${p.comments}评论</div>
+                <div style="margin-top: 10px;">
+                    <button onclick="reportPost('${p.id}')" class="btn" style="background-color: var(--danger); color: white; padding: 5px 12px;">举报</button>
+                </div>
             </div>`
         ).join('');
 
@@ -479,6 +504,13 @@
             if (data2.success) {
                 renderApprovedPosts(data2.posts);
             }
+
+            // 加载待处理举报的帖子
+            const response3 = await fetch('/api/post/reported');
+            const data3 = await response3.json();
+            if (data3.success) {
+                renderReportedPosts(data3.posts);
+            }
         } catch (error) {
             console.error('加载审核帖子失败:', error);
         }
@@ -573,6 +605,93 @@
                 alert('帖子已驳回' + (reason ? '：' + reason : ''));
                 closeRejectModal();
                 loadPendingPosts();
+            } else {
+                alert(data.message || '操作失败');
+            }
+        } catch (error) {
+            alert('操作失败：' + error);
+        }
+    }
+
+    // 打开举报弹窗
+    function reportPost(postId) {
+        if (!checkLogin()) return;
+        currentReportPostId = postId;
+        document.getElementById('reportModal').classList.add('active');
+    }
+
+    // 关闭举报弹窗
+    function closeReportModal() {
+        document.getElementById('reportModal').classList.remove('active');
+        currentReportPostId = null;
+        document.getElementById('reportReasonText').value = '';
+    }
+
+    // 提交举报
+    async function submitReport() {
+        if (!currentReportPostId) return;
+
+        const reason = document.getElementById('reportReasonText').value.trim();
+        if (!reason) {
+            alert('请填写举报理由');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/post/report/${currentReportPostId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportReason: reason })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('举报成功，版主会尽快处理');
+                closeReportModal();
+            } else {
+                alert(data.message || '举报失败');
+            }
+        } catch (error) {
+            alert('举报失败：' + error);
+        }
+    }
+
+    // 渲染被举报的帖子
+    function renderReportedPosts(posts) {
+        if (posts.length === 0) {
+            document.getElementById('reportedPostsList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无待处理的举报</p>';
+            return;
+        }
+
+        document.getElementById('reportedPostsList').innerHTML = posts.map(p =>
+            `<div class="post-item" style="border-left: 4px solid var(--danger); padding-left: 15px;">
+                <div class="post-title">${p.title}</div>
+                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)}</div>
+                <div class="post-meta">举报理由：<span style="color: var(--danger);">${p.reportReason}</span></div>
+                <div style="margin-top: 10px;">
+                    <button onclick="handleReport('${p.id}', true)" class="btn" style="background-color: var(--success); color: white; padding: 5px 12px; margin-right: 10px;">属实</button>
+                    <button onclick="handleReport('${p.id}', false)" class="btn" style="background-color: var(--primary); color: white; padding: 5px 12px;">驳回</button>
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    // 处理举报
+    async function handleReport(postId, isConfirmed) {
+        if (!confirm(`确认${isConfirmed ? '属实' : '驳回'}该举报？`)) return;
+
+        try {
+            const response = await fetch(`/api/post/handle-report/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirmed: isConfirmed })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert(isConfirmed ? '已标记为违规' : '举报已驳回');
+                loadPendingPosts();
+                await loadPosts();
             } else {
                 alert(data.message || '操作失败');
             }

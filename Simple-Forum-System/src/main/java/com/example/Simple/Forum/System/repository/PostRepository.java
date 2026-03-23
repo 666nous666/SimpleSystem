@@ -172,7 +172,7 @@ public class PostRepository {
         try {
             List<String> lines = new ArrayList<>();
             for (Post post : postDatabase.values()) {
-                String line = String.format("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s",
+                String line = String.format("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s|%s",
                         post.getId(),
                         post.getTitle(),
                         post.getContent(),
@@ -182,7 +182,8 @@ public class PostRepository {
                         post.getCreateTime(),
                         post.getVotes(),
                         post.getStatus() != null ? post.getStatus() : "pending",
-                        post.getRejectReason() != null ? post.getRejectReason() : ""
+                        post.getRejectReason() != null ? post.getRejectReason() : "",
+                        post.getReportReason() != null ? post.getReportReason() : ""
                 );
                 lines.add(line);
             }
