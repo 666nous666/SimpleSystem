@@ -11,8 +11,9 @@ public class Post {
     private String createTime;  // 创建时间
     private int votes;          // 点赞数
     private int comments;       // 评论数
-    private String status;      // 审核状态：pending-待审核，approved-已通过，rejected-已驳回
+    private String status;      // 审核状态：pending-待审核，approved-已通过，rejected-已驳回，reported-被举报
     private String rejectReason; // 驳回理由
+    private String reportReason; // 举报理由
     
     public Post() {}
     
@@ -55,4 +56,7 @@ public class Post {
     public void setStatus(String status) { this.status = status; }
     public String getRejectReason() { return rejectReason; }
     public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
+    public String getReportReason() { return reportReason; }
+    public void setReportReason(String reportReason) { this.reportReason = reportReason; }
+
 }

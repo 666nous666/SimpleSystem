@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 // 帖子服务实现类：处理帖子的业务逻辑
 @Service
@@ -90,6 +91,47 @@ public class PostServiceImpl implements PostService {
             Post post = optionalPost.get();
             post.setStatus("rejected");
             post.setRejectReason(reason != null ? reason : "");
+            return postRepository.save(post);
+        }
+        return null;
+    }
+
+    @Override
+    public List<Post> getReportedPosts() {
+        return postRepository.findAll().stream()
+                .filter(p -> "reported".equals(p.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Post reportPost(String id, String reason) {
+        Optional<Post> optionalPost = postRepository.findById(id);
+        if (optionalPost.isPresent()) {
+            Post post = optionalPost.get();
+            if ("reported".equals(post.getStatus())) {
+                return null; // 已经被举报了
+            }
+            post.setStatus("reported");
+            post.setReportReason(reason);
+            return postRepository.save(post);
+        }
+        return null;
+    }
+
+    @Override
+    public Post handleReport(String id, boolean confirmed) {
+        Optional<Post> optionalPost = postRepository.findById(id);
+        if (optionalPost.isPresent()) {
+            Post post = optionalPost.get();
+            if (!"reported".equals(post.getStatus())) {
+                return null; // 不是被举报状态
+            }
+            if (confirmed) {
+                post.setStatus("violated"); // 标记为违规
+            } else {
+                post.setStatus("approved"); // 恢复为已通过
+                post.setReportReason(""); // 清除举报理由
+            }
             return postRepository.save(post);
         }
         return null;
