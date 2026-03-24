@@ -130,6 +130,7 @@
             <div class="tabs">
                 <div class="tab active" data-tab="admin-users" id="adminUsersTab">用户管理</div>
                 <div class="tab" data-tab="admin-review" id="reviewTab" style="display: none;">帖子审核</div>
+                <div class="tab" data-tab="admin-reports" id="reportsTab" style="display: none;">举报处理</div>
             </div>
             <div id="admin-users" class="tab-content active">
                 <div class="card">
@@ -151,9 +152,17 @@
 
                     <h3 class="card-title" style="margin-top: 30px;">已通过帖子</h3>
                     <div id="approvedPostsList"></div>
+                </div>
+            </div>
 
-                    <h3 class="card-title" style="margin-top: 30px;">举报处理</h3>
+            <!-- 举报处理界面 -->
+            <div id="admin-reports" class="tab-content">
+                <div class="card">
+                    <h3 class="card-title">待处理举报</h3>
                     <div id="reportedPostsList"></div>
+
+                    <h3 class="card-title" style="margin-top: 30px;">已处理举报</h3>
+                    <div id="handledReportsList"></div>
                 </div>
             </div>
         </div>
@@ -196,7 +205,7 @@
             <p style="margin-bottom: 15px;">请说明举报理由：</p>
             <textarea id="reportReasonText" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="请输入举报理由..."></textarea>
             <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button onclick="submitReport()" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">提交举报</button>
+                <button onclick="submitReport()" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px;">提交举报</button>
                 <button onclick="closeReportModal()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
             </div>
         </div>
@@ -220,6 +229,7 @@
     let currentUser = { loggedIn: false, username: "", role: "guest", level: 2 };
     let currentRejectPostId = null;  // 当前要驳回的帖子 ID
     let currentReportPostId = null;  // 当前要举报的帖子 ID
+    let previousView = 'home';  // 记录之前的视图，用于返回
 
     function loadCurrentUser() {
         try {
@@ -256,17 +266,20 @@
                 document.getElementById('adminTab').style.display = 'block';
                 document.getElementById('adminUsersTab').style.display = 'block';
                 document.getElementById('reviewTab').style.display = 'none';
+                document.getElementById('reportsTab').style.display = 'none';
             } else if (currentUser.level === 1) {
-                // 版主只显示审核功能，隐藏用户管理
+                // 版主只显示审核功能和举报处理，隐藏用户管理
                 document.getElementById('adminTab').style.display = 'block';
                 document.getElementById('adminUsersTab').style.display = 'none';
                 document.getElementById('reviewTab').style.display = 'block';
+                document.getElementById('reportsTab').style.display = 'block';
             } else {
                 document.getElementById('adminTab').style.display = 'none';
                 document.getElementById('adminUsersTab').style.display = 'none';
                 document.getElementById('reviewTab').style.display = 'none';
+                document.getElementById('reportsTab').style.display = 'none';
             }
-            document.getElementById('userAvatar').innerHTML = 
+            document.getElementById('userAvatar').innerHTML =
                 `<img src="https://ui-avatars.com/api/?name=${currentUser.username}&background=3498db&color=fff" alt="用户" style="width: 100%; height: 100%;">`;
         } else {
             setTimeout(() => {
@@ -300,9 +313,6 @@
             `<div class="post-item">
                 <div class="post-title"><a href="#" onclick="showPost('${p.id}')">${p.title}</a></div>
                 <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)} • ${p.comments}评论</div>
-                <div style="margin-top: 10px;">
-                    <button onclick="reportPost('${p.id}')" class="btn" style="background-color: var(--danger); color: white; padding: 5px 12px;">举报</button>
-                </div>
             </div>`
         ).join('');
 
@@ -338,21 +348,21 @@
     }
 
     function loadData() {
-        document.getElementById('popularForums').innerHTML = mockData.forums.map(f => 
+        document.getElementById('popularForums').innerHTML = mockData.forums.map(f =>
             `<div class="post-item">
                 <div class="post-title">${f.name}</div>
                 <div class="post-meta">${f.posts}帖子 ${f.today}今日</div>
             </div>`
         ).join('');
 
-        document.getElementById('forumList').innerHTML = mockData.forums.map(f => 
+        document.getElementById('forumList').innerHTML = mockData.forums.map(f =>
             `<div class="post-item">
                 <div class="post-title">${f.name}</div>
                 <div class="post-meta">${f.desc} • ${f.posts}帖子</div>
             </div>`
         ).join('');
 
-        document.getElementById('userTable').innerHTML = mockData.users.map(u => 
+        document.getElementById('userTable').innerHTML = mockData.users.map(u =>
             `<tr>
                 <td style="padding: 10px;">${u.name}</td>
                 <td style="padding: 10px;">${u.status}</td>
@@ -369,17 +379,28 @@
         initUserState();
         loadPosts();
         loadData();
-        
-        document.querySelectorAll('.nav a').forEach(a => 
-            a.addEventListener('click', e => { 
-                e.preventDefault(); 
-                showTab(e.target.getAttribute('data-tab')); 
+
+        document.querySelectorAll('.nav a').forEach(a =>
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                showTab(e.target.getAttribute('data-tab'));
+            })
+        );
+
+        // 为管理界面的子标签添加点击事件
+        document.querySelectorAll('.tab').forEach(tab =>
+            tab.addEventListener('click', e => {
+                e.preventDefault();
+                const subTabId = e.target.getAttribute('data-tab');
+                if (subTabId) {
+                    showSubTab(subTabId);
+                }
             })
         );
 
         document.getElementById('submitPost').addEventListener('click', async () => {
             if(!checkLogin()) return;
-            
+
             const title = document.getElementById('postTitle').value;
             const forum = document.getElementById('postForum').value;
             const content = document.getElementById('postContent').value;
@@ -445,6 +466,10 @@
             loadPendingPosts();
         }
 
+        if (tabId === 'admin-reports') {
+            loadReportedPosts();
+        }
+
         if (tabId === 'admin') {
             // 根据用户角色默认显示不同的子标签
             if (currentUser.level === 1) {
@@ -459,21 +484,49 @@
         }
     }
 
+    function showSubTab(subTabId) {
+        // 隐藏所有 admin 下的子内容
+        document.querySelectorAll('#admin .tab-content').forEach(t => t.classList.remove('active'));
+        // 取消所有子标签的激活状态
+        document.querySelectorAll('#admin .tab').forEach(t => t.classList.remove('active'));
+
+        // 显示目标子内容
+        const targetContent = document.getElementById(subTabId);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+
+        // 激活目标子标签
+        const targetTab = document.querySelector(`.tab[data-tab="${subTabId}"]`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
+
+        // 根据子标签加载对应数据
+        if (subTabId === 'admin-review') {
+            loadPendingPosts();
+        } else if (subTabId === 'admin-reports') {
+            loadReportedPosts();
+        }
+    }
+
     async function showPost(id) {
         try {
             const response = await fetch(`/api/post/${id}`);
             const data = await response.json();
             if (data.success) {
                 const post = data.post;
-                document.querySelector('.content').innerHTML = 
+                previousView = document.querySelector('.tab-content.active').id;
+                document.querySelector('.content').innerHTML =
                     `<div class="tab-content active">
                         <div class="card">
                             <h2 class="card-title">${post.title}</h2>
                             <div class="post-meta">${post.author} • ${post.forum} • ${formatTime(post.createTime)}</div>
                             <p style="margin: 20px 0; white-space: pre-wrap; line-height: 1.8;">${post.content}</p>
                             ${post.tags ? `<div style="margin: 15px 0;"><span style="color: var(--gray);">标签：</span>${post.tags.split(',').map(t => '<span style="background: #e3f2fd; color: #1976d2; padding: 3px 8px; border-radius: 3px; margin-right: 5px; font-size: 0.85rem;">'+t.trim()+'</span>').join('')}</div>` : ''}
-                            <div style="margin-top: 30px;">
-                                <button class="btn btn-primary" onclick="location.reload()">返回</button>
+                            <div style="margin-top: 30px; display: flex; gap: 10px; align-items: center;">
+                                <button class="btn btn-primary" onclick="goBack()">返回</button>
+                                <button onclick="reportPost('${post.id}')" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px;">举报</button>
                             </div>
                         </div>
                     </div>`;
@@ -481,6 +534,10 @@
         } catch (error) {
             alert('加载帖子失败');
         }
+    }
+
+    function goBack() {
+        location.reload();
     }
 
     function logout() {
@@ -504,15 +561,27 @@
             if (data2.success) {
                 renderApprovedPosts(data2.posts);
             }
-
-            // 加载待处理举报的帖子
-            const response3 = await fetch('/api/post/reported');
-            const data3 = await response3.json();
-            if (data3.success) {
-                renderReportedPosts(data3.posts);
-            }
         } catch (error) {
             console.error('加载审核帖子失败:', error);
+        }
+    }
+
+    // 加载举报帖子列表
+    async function loadReportedPosts() {
+        try {
+            const response = await fetch('/api/post/reported');
+            const data = await response.json();
+            if (data.success) {
+                renderReportedPosts(data.posts);
+            }
+
+            const response2 = await fetch('/api/post/handled-reports');
+            const data2 = await response2.json();
+            if (data2.success) {
+                renderHandledReports(data2.posts);
+            }
+        } catch (error) {
+            console.error('加载举报帖子失败:', error);
         }
     }
 
@@ -676,6 +745,23 @@
         ).join('');
     }
 
+    // 渲染已处理的举报
+    function renderHandledReports(posts) {
+        if (posts.length === 0) {
+            document.getElementById('handledReportsList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无已处理举报</p>';
+            return;
+        }
+
+        document.getElementById('handledReportsList').innerHTML = posts.map(p =>
+            `<div class="post-item" style="border-left: 4px solid ${p.status === 'violated' ? 'var(--success)' : 'var(--gray)'}; padding-left: 15px;">
+                <div class="post-title">${p.title}</div>
+                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)}</div>
+                <div class="post-meta">举报理由：<span style="color: var(--danger);">${p.reportReason}</span></div>
+                <div class="post-meta" style="margin-top: 5px;">处理结果：<span style="color: ${p.status === 'violated' ? 'var(--success)' : 'var(--gray)'};">${p.status === 'violated' ? '举报属实 - 已标记违规' : '举报不属实 - 已恢复'}</span></div>
+            </div>`
+        ).join('');
+    }
+
     // 处理举报
     async function handleReport(postId, isConfirmed) {
         if (!confirm(`确认${isConfirmed ? '属实' : '驳回'}该举报？`)) return;
@@ -690,7 +776,7 @@
             const data = await response.json();
             if (data.success) {
                 alert(isConfirmed ? '已标记为违规' : '举报已驳回');
-                loadPendingPosts();
+                loadReportedPosts();
                 await loadPosts();
             } else {
                 alert(data.message || '操作失败');

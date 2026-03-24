@@ -23,5 +23,6 @@ public interface PostService {
     List<Post> getReportedPosts();
     Post reportPost(String id, String reason);
     Post handleReport(String id, boolean confirmed);
+    List<Post> getHandledReports();
 
 }

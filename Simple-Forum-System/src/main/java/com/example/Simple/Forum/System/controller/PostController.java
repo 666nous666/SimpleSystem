@@ -237,4 +237,14 @@ public class PostController {
             );
         }
     }
+
+    // 获取已处理的举报列表
+    @GetMapping("/handled-reports")
+    public Map<String, Object> getHandledReports() {
+        List<Post> posts = postService.getHandledReports();
+        return Map.of(
+            "success", true,
+            "posts", posts
+        );
+    }
 }

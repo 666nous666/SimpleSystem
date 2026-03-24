@@ -136,4 +136,12 @@ public class PostServiceImpl implements PostService {
         }
         return null;
     }
+
+    @Override
+    public List<Post> getHandledReports() {
+        return postRepository.findAll().stream()
+                .filter(p -> "violated".equals(p.getStatus()) || 
+                            ("approved".equals(p.getStatus()) && p.getReportReason() != null && !p.getReportReason().isEmpty()))
+                .collect(Collectors.toList());
+    }
 }
