@@ -95,6 +95,33 @@
 
         <div id="forums" class="tab-content">
             <div class="card"><h2 class="card-title">论坛板块</h2><div id="forumList"></div></div>
+
+            <!-- 子板块列表界面 -->
+            <div id="subforum-view" class="card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 class="card-title" id="currentForumTitle" style="margin: 0;"></h3>
+                    <div>
+                        <button onclick="showCreateSubForumModal()" id="createSubForumBtn" class="btn btn-primary" style="padding: 8px 16px; margin-right: 10px; display: none;">
+                            <i class="fas fa-plus"></i> 创建子板块
+                        </button>
+                        <button onclick="backToForumList()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px;">
+                            <i class="fas fa-arrow-left"></i> 返回
+                        </button>
+                    </div>
+                </div>
+                <div id="subForumList"></div>
+
+                <!-- 子板块帖子列表 -->
+                <div id="subForumPosts" style="margin-top: 30px; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 class="card-title" id="currentSubForumTitle" style="margin: 0;"></h4>
+                        <button onclick="closeSubForumPosts()" class="btn" style="background-color: var(--gray); color: white; padding: 5px 10px; font-size: 0.9rem;">
+                            <i class="fas fa-times"></i> 关闭
+                        </button>
+                    </div>
+                    <div id="subForumPostList"></div>
+                </div>
+            </div>
         </div>
 
         <div id="new-post" class="tab-content">
@@ -130,7 +157,6 @@
             <div class="tabs">
                 <div class="tab active" data-tab="admin-users" id="adminUsersTab">用户管理</div>
                 <div class="tab" data-tab="admin-review" id="reviewTab" style="display: none;">帖子审核</div>
-                <div class="tab" data-tab="admin-reports" id="reportsTab" style="display: none;">举报处理</div>
             </div>
             <div id="admin-users" class="tab-content active">
                 <div class="card">
@@ -152,17 +178,6 @@
 
                     <h3 class="card-title" style="margin-top: 30px;">已通过帖子</h3>
                     <div id="approvedPostsList"></div>
-                </div>
-            </div>
-
-            <!-- 举报处理界面 -->
-            <div id="admin-reports" class="tab-content">
-                <div class="card">
-                    <h3 class="card-title">待处理举报</h3>
-                    <div id="reportedPostsList"></div>
-
-                    <h3 class="card-title" style="margin-top: 30px;">已处理举报</h3>
-                    <div id="handledReportsList"></div>
                 </div>
             </div>
         </div>
@@ -194,19 +209,35 @@
     </div>
 </div>
 
-<!-- 举报弹窗 -->
-<div id="reportModal" class="modal">
+<!-- 创建/编辑子板块弹窗 -->
+<div id="subForumModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>举报帖子</h3>
-            <button onclick="closeReportModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h3 id="subForumModalTitle">创建子板块</h3>
+            <button onclick="closeSubForumModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
         </div>
         <div class="modal-body">
-            <p style="margin-bottom: 15px;">请说明举报理由：</p>
-            <textarea id="reportReasonText" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="请输入举报理由..."></textarea>
+            <input type="hidden" id="editSubForumId">
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">父板块</label>
+                <select id="parentForumSelect" class="form-control">
+                    <option value="">请选择父板块</option>
+                    <option value="生活分享">生活分享</option>
+                    <option value="技术讨论">技术讨论</option>
+                    <option value="娱乐八卦">娱乐八卦</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">子板块名称</label>
+                <input type="text" id="subForumName" class="form-control" placeholder="请输入子板块名称" maxlength="20">
+            </div>
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">描述</label>
+                <textarea id="subForumDesc" class="form-control" placeholder="请输入子板块描述" rows="3" maxlength="100"></textarea>
+            </div>
             <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button onclick="submitReport()" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px;">提交举报</button>
-                <button onclick="closeReportModal()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+                <button onclick="confirmSubForumAction()" class="btn btn-primary" style="padding: 8px 16px;" id="confirmSubForumBtn">创建</button>
+                <button onclick="closeSubForumModal()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px;">取消</button>
             </div>
         </div>
     </div>
@@ -227,9 +258,29 @@
     };
 
     let currentUser = { loggedIn: false, username: "", role: "guest", level: 2 };
-    let currentRejectPostId = null;  // 当前要驳回的帖子 ID
-    let currentReportPostId = null;  // 当前要举报的帖子 ID
-    let previousView = 'home';  // 记录之前的视图，用于返回
+    let currentRejectPostId = null;
+    let currentParentForum = null;
+    let currentSubForumMode = 'create';
+
+    // 从 localStorage 加载子板块数据
+    function loadSubForumsData() {
+        const data = localStorage.getItem('subForums');
+        if (data) {
+            return JSON.parse(data);
+        }
+        // 默认子板块数据
+        return [
+            { id: '1', name: '日常闲聊', description: '分享日常生活点滴', parentForum: '生活分享', creator: '管理员', postCount: 0 },
+            { id: '2', name: '美食天地', description: '交流美食制作技巧', parentForum: '生活分享', creator: '管理员', postCount: 0 },
+            { id: '3', name: 'Java 技术', description: 'Java 编程技术讨论', parentForum: '技术讨论', creator: '管理员', postCount: 0 },
+            { id: '4', name: '前端开发', description: 'Web 前端技术交流', parentForum: '技术讨论', creator: '管理员', postCount: 0 },
+            { id: '5', name: '影视评论', description: '电影电视剧观后感', parentForum: '娱乐八卦', creator: '管理员', postCount: 0 }
+        ];
+    }
+
+    function saveSubForumsData(subForums) {
+        localStorage.setItem('subForums', JSON.stringify(subForums));
+    }
 
     function loadCurrentUser() {
         try {
@@ -262,22 +313,17 @@
         if (currentUser.loggedIn) {
             document.getElementById('userInfo').textContent = `${currentUser.username} | ${currentUser.role}`;
             if (currentUser.level === 0) {
-                // 管理员显示所有管理功能（用户管理 + 帖子审核）
                 document.getElementById('adminTab').style.display = 'block';
                 document.getElementById('adminUsersTab').style.display = 'block';
                 document.getElementById('reviewTab').style.display = 'none';
-                document.getElementById('reportsTab').style.display = 'none';
             } else if (currentUser.level === 1) {
-                // 版主只显示审核功能和举报处理，隐藏用户管理
                 document.getElementById('adminTab').style.display = 'block';
                 document.getElementById('adminUsersTab').style.display = 'none';
                 document.getElementById('reviewTab').style.display = 'block';
-                document.getElementById('reportsTab').style.display = 'block';
             } else {
                 document.getElementById('adminTab').style.display = 'none';
                 document.getElementById('adminUsersTab').style.display = 'none';
                 document.getElementById('reviewTab').style.display = 'none';
-                document.getElementById('reportsTab').style.display = 'none';
             }
             document.getElementById('userAvatar').innerHTML =
                 `<img src="https://ui-avatars.com/api/?name=${currentUser.username}&background=3498db&color=fff" alt="用户" style="width: 100%; height: 100%;">`;
@@ -355,10 +401,16 @@
             </div>`
         ).join('');
 
+        const isModerator = currentUser.level <= 1;
         document.getElementById('forumList').innerHTML = mockData.forums.map(f =>
-            `<div class="post-item">
-                <div class="post-title">${f.name}</div>
-                <div class="post-meta">${f.desc} • ${f.posts}帖子</div>
+            `<div class="post-item" style="cursor: pointer;" onclick="viewSubForums('${f.name}')">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="post-title">${f.name}</div>
+                        <div class="post-meta">${f.desc} • ${f.posts}帖子</div>
+                    </div>
+                    ${isModerator ? `<button onclick="event.stopPropagation();" onmousedown="prepareCreateSubForum('${f.name}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85rem;">管理子板块</button>` : ''}
+                </div>
             </div>`
         ).join('');
 
@@ -384,17 +436,6 @@
             a.addEventListener('click', e => {
                 e.preventDefault();
                 showTab(e.target.getAttribute('data-tab'));
-            })
-        );
-
-        // 为管理界面的子标签添加点击事件
-        document.querySelectorAll('.tab').forEach(tab =>
-            tab.addEventListener('click', e => {
-                e.preventDefault();
-                const subTabId = e.target.getAttribute('data-tab');
-                if (subTabId) {
-                    showSubTab(subTabId);
-                }
             })
         );
 
@@ -466,10 +507,6 @@
             loadPendingPosts();
         }
 
-        if (tabId === 'admin-reports') {
-            loadReportedPosts();
-        }
-
         if (tabId === 'admin') {
             // 根据用户角色默认显示不同的子标签
             if (currentUser.level === 1) {
@@ -484,39 +521,12 @@
         }
     }
 
-    function showSubTab(subTabId) {
-        // 隐藏所有 admin 下的子内容
-        document.querySelectorAll('#admin .tab-content').forEach(t => t.classList.remove('active'));
-        // 取消所有子标签的激活状态
-        document.querySelectorAll('#admin .tab').forEach(t => t.classList.remove('active'));
-
-        // 显示目标子内容
-        const targetContent = document.getElementById(subTabId);
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
-
-        // 激活目标子标签
-        const targetTab = document.querySelector(`.tab[data-tab="${subTabId}"]`);
-        if (targetTab) {
-            targetTab.classList.add('active');
-        }
-
-        // 根据子标签加载对应数据
-        if (subTabId === 'admin-review') {
-            loadPendingPosts();
-        } else if (subTabId === 'admin-reports') {
-            loadReportedPosts();
-        }
-    }
-
     async function showPost(id) {
         try {
             const response = await fetch(`/api/post/${id}`);
             const data = await response.json();
             if (data.success) {
                 const post = data.post;
-                previousView = document.querySelector('.tab-content.active').id;
                 document.querySelector('.content').innerHTML =
                     `<div class="tab-content active">
                         <div class="card">
@@ -524,9 +534,8 @@
                             <div class="post-meta">${post.author} • ${post.forum} • ${formatTime(post.createTime)}</div>
                             <p style="margin: 20px 0; white-space: pre-wrap; line-height: 1.8;">${post.content}</p>
                             ${post.tags ? `<div style="margin: 15px 0;"><span style="color: var(--gray);">标签：</span>${post.tags.split(',').map(t => '<span style="background: #e3f2fd; color: #1976d2; padding: 3px 8px; border-radius: 3px; margin-right: 5px; font-size: 0.85rem;">'+t.trim()+'</span>').join('')}</div>` : ''}
-                            <div style="margin-top: 30px; display: flex; gap: 10px; align-items: center;">
-                                <button class="btn btn-primary" onclick="goBack()">返回</button>
-                                <button onclick="reportPost('${post.id}')" class="btn" style="background-color: var(--danger); color: white; padding: 8px 16px;">举报</button>
+                            <div style="margin-top: 30px;">
+                                <button class="btn btn-primary" onclick="location.reload()">返回</button>
                             </div>
                         </div>
                     </div>`;
@@ -536,14 +545,179 @@
         }
     }
 
-    function goBack() {
-        location.reload();
-    }
-
     function logout() {
         if (confirm('确定要退出登录吗？')) {
             localStorage.removeItem('currentUser');
             window.location.href = '/login.html';
+        }
+    }
+
+    // 查看子板块列表
+    function viewSubForums(forumName) {
+        currentParentForum = forumName;
+
+        document.querySelectorAll('#forums .card').forEach(card => card.style.display = 'none');
+        document.getElementById('subforum-view').style.display = 'block';
+        document.getElementById('currentForumTitle').textContent = forumName + ' - 子板块';
+        document.getElementById('subForumPosts').style.display = 'none';
+
+        const isModerator = currentUser.level <= 1;
+        document.getElementById('createSubForumBtn').style.display = isModerator ? 'inline-block' : 'none';
+
+        renderSubForums();
+    }
+
+    // 返回板块列表
+    function backToForumList() {
+        document.querySelectorAll('#forums .card').forEach(card => card.style.display = 'block');
+        document.getElementById('subforum-view').style.display = 'none';
+        currentParentForum = null;
+    }
+
+    // 关闭子板块帖子视图
+    function closeSubForumPosts() {
+        document.getElementById('subForumPosts').style.display = 'none';
+        document.getElementById('subForumList').style.display = 'block';
+    }
+
+    // 准备创建子板块
+    function prepareCreateSubForum(forumName) {
+        currentParentForum = forumName;
+        showCreateSubForumModal();
+    }
+
+    // 渲染子板块列表
+    function renderSubForums() {
+        const subForums = loadSubForumsData();
+        const filteredSubForums = subForums.filter(sf => sf.parentForum === currentParentForum);
+
+        const isModerator = currentUser.level <= 1;
+
+        if (filteredSubForums.length === 0) {
+            document.getElementById('subForumList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无子板块</p>';
+            return;
+        }
+
+        document.getElementById('subForumList').innerHTML = filteredSubForums.map(sf =>
+            `<div class="post-item" style="border-left: 4px solid var(--primary); padding-left: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;" onclick="viewSubForumPosts('${sf.id}', '${sf.name}')">
+                        <div class="post-title" style="cursor: pointer;">${sf.name}</div>
+                        <div class="post-meta">${sf.description} • 创建者：${sf.creator}</div>
+                    </div>
+                    ${isModerator && sf.creator === currentUser.username ? `
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="editSubForum('${sf.id}', '${sf.name}', '${sf.description}')" class="btn" style="background-color: var(--primary); color: white; padding: 5px 10px;">编辑</button>
+                        <button onclick="deleteSubForum('${sf.id}')" class="btn" style="background-color: var(--danger); color: white; padding: 5px 10px;">删除</button>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    // 显示创建子板块弹窗
+    function showCreateSubForumModal() {
+        currentSubForumMode = 'create';
+        document.getElementById('subForumModalTitle').textContent = '创建子板块';
+        document.getElementById('confirmSubForumBtn').textContent = '创建';
+        document.getElementById('parentForumSelect').value = currentParentForum || '';
+        document.getElementById('subForumName').value = '';
+        document.getElementById('subForumDesc').value = '';
+        document.getElementById('editSubForumId').value = '';
+        document.getElementById('subForumModal').classList.add('active');
+    }
+
+    // 关闭子板块弹窗
+    function closeSubForumModal() {
+        document.getElementById('subForumModal').classList.remove('active');
+    }
+
+    // 编辑子板块
+    function editSubForum(id, name, description) {
+        currentSubForumMode = 'edit';
+        document.getElementById('subForumModalTitle').textContent = '编辑子板块';
+        document.getElementById('confirmSubForumBtn').textContent = '保存';
+        document.getElementById('editSubForumId').value = id;
+        document.getElementById('subForumName').value = name;
+        document.getElementById('subForumDesc').value = description;
+        document.getElementById('parentForumSelect').value = currentParentForum;
+        document.getElementById('parentForumSelect').disabled = true;
+        document.getElementById('subForumModal').classList.add('active');
+    }
+
+    // 确认创建/编辑子板块
+    function confirmSubForumAction() {
+        const parentForum = document.getElementById('parentForumSelect').value;
+        const name = document.getElementById('subForumName').value.trim();
+        const description = document.getElementById('subForumDesc').value.trim();
+        const editId = document.getElementById('editSubForumId').value;
+
+        if (!parentForum) {
+            alert('请选择父板块');
+            return;
+        }
+        if (!name) {
+            alert('请输入子板块名称');
+            return;
+        }
+
+        let subForums = loadSubForumsData();
+
+        if (currentSubForumMode === 'create') {
+            const newSubForum = {
+                id: String(Date.now()),
+                name: name,
+                description: description,
+                parentForum: parentForum,
+                creator: currentUser.username,
+                postCount: 0
+            };
+            subForums.push(newSubForum);
+            alert('子板块创建成功！');
+        } else if (currentSubForumMode === 'edit') {
+            const index = subForums.findIndex(sf => sf.id === editId);
+            if (index !== -1) {
+                subForums[index].name = name;
+                subForums[index].description = description;
+                alert('更新成功！');
+            }
+            document.getElementById('parentForumSelect').disabled = false;
+        }
+
+        saveSubForumsData(subForums);
+        closeSubForumModal();
+        renderSubForums();
+    }
+
+    // 删除子板块
+    function deleteSubForum(id) {
+        if (!confirm('确认删除该子板块？删除后不可恢复！')) return;
+
+        let subForums = loadSubForumsData();
+        subForums = subForums.filter(sf => sf.id !== id);
+        saveSubForumsData(subForums);
+        alert('删除成功！');
+        renderSubForums();
+    }
+
+    // 查看子板块内的帖子
+    function viewSubForumPosts(subForumId, subForumName) {
+        document.getElementById('subForumList').style.display = 'none';
+        document.getElementById('subForumPosts').style.display = 'block';
+        document.getElementById('currentSubForumTitle').textContent = subForumName + ' - 帖子列表';
+
+        const approvedPosts = mockData.posts.filter(p => p.status === 'approved' || p.status === undefined);
+
+        if (approvedPosts.length === 0) {
+            document.getElementById('subForumPostList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无帖子</p>';
+        } else {
+            document.getElementById('subForumPostList').innerHTML = approvedPosts.map(p =>
+                `<div class="post-item">
+                    <div class="post-title"><a href="#" onclick="showPost('${p.id}')">${p.title}</a></div>
+                    <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)} • ${p.comments}评论</div>
+                </div>`
+            ).join('');
         }
     }
 
@@ -563,25 +737,6 @@
             }
         } catch (error) {
             console.error('加载审核帖子失败:', error);
-        }
-    }
-
-    // 加载举报帖子列表
-    async function loadReportedPosts() {
-        try {
-            const response = await fetch('/api/post/reported');
-            const data = await response.json();
-            if (data.success) {
-                renderReportedPosts(data.posts);
-            }
-
-            const response2 = await fetch('/api/post/handled-reports');
-            const data2 = await response2.json();
-            if (data2.success) {
-                renderHandledReports(data2.posts);
-            }
-        } catch (error) {
-            console.error('加载举报帖子失败:', error);
         }
     }
 
@@ -674,110 +829,6 @@
                 alert('帖子已驳回' + (reason ? '：' + reason : ''));
                 closeRejectModal();
                 loadPendingPosts();
-            } else {
-                alert(data.message || '操作失败');
-            }
-        } catch (error) {
-            alert('操作失败：' + error);
-        }
-    }
-
-    // 打开举报弹窗
-    function reportPost(postId) {
-        if (!checkLogin()) return;
-        currentReportPostId = postId;
-        document.getElementById('reportModal').classList.add('active');
-    }
-
-    // 关闭举报弹窗
-    function closeReportModal() {
-        document.getElementById('reportModal').classList.remove('active');
-        currentReportPostId = null;
-        document.getElementById('reportReasonText').value = '';
-    }
-
-    // 提交举报
-    async function submitReport() {
-        if (!currentReportPostId) return;
-
-        const reason = document.getElementById('reportReasonText').value.trim();
-        if (!reason) {
-            alert('请填写举报理由');
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/post/report/${currentReportPostId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reportReason: reason })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                alert('举报成功，版主会尽快处理');
-                closeReportModal();
-            } else {
-                alert(data.message || '举报失败');
-            }
-        } catch (error) {
-            alert('举报失败：' + error);
-        }
-    }
-
-    // 渲染被举报的帖子
-    function renderReportedPosts(posts) {
-        if (posts.length === 0) {
-            document.getElementById('reportedPostsList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无待处理的举报</p>';
-            return;
-        }
-
-        document.getElementById('reportedPostsList').innerHTML = posts.map(p =>
-            `<div class="post-item" style="border-left: 4px solid var(--danger); padding-left: 15px;">
-                <div class="post-title">${p.title}</div>
-                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)}</div>
-                <div class="post-meta">举报理由：<span style="color: var(--danger);">${p.reportReason}</span></div>
-                <div style="margin-top: 10px;">
-                    <button onclick="handleReport('${p.id}', true)" class="btn" style="background-color: var(--success); color: white; padding: 5px 12px; margin-right: 10px;">属实</button>
-                    <button onclick="handleReport('${p.id}', false)" class="btn" style="background-color: var(--primary); color: white; padding: 5px 12px;">驳回</button>
-                </div>
-            </div>`
-        ).join('');
-    }
-
-    // 渲染已处理的举报
-    function renderHandledReports(posts) {
-        if (posts.length === 0) {
-            document.getElementById('handledReportsList').innerHTML = '<p style="color: var(--gray); padding: 20px; text-align: center;">暂无已处理举报</p>';
-            return;
-        }
-
-        document.getElementById('handledReportsList').innerHTML = posts.map(p =>
-            `<div class="post-item" style="border-left: 4px solid ${p.status === 'violated' ? 'var(--success)' : 'var(--gray)'}; padding-left: 15px;">
-                <div class="post-title">${p.title}</div>
-                <div class="post-meta">${p.author} • ${p.forum} • ${formatTime(p.createTime)}</div>
-                <div class="post-meta">举报理由：<span style="color: var(--danger);">${p.reportReason}</span></div>
-                <div class="post-meta" style="margin-top: 5px;">处理结果：<span style="color: ${p.status === 'violated' ? 'var(--success)' : 'var(--gray)'};">${p.status === 'violated' ? '举报属实 - 已标记违规' : '举报不属实 - 已恢复'}</span></div>
-            </div>`
-        ).join('');
-    }
-
-    // 处理举报
-    async function handleReport(postId, isConfirmed) {
-        if (!confirm(`确认${isConfirmed ? '属实' : '驳回'}该举报？`)) return;
-
-        try {
-            const response = await fetch(`/api/post/handle-report/${postId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ confirmed: isConfirmed })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                alert(isConfirmed ? '已标记为违规' : '举报已驳回');
-                loadReportedPosts();
-                await loadPosts();
             } else {
                 alert(data.message || '操作失败');
             }
