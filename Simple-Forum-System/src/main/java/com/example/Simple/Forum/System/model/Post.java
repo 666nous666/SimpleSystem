@@ -7,6 +7,7 @@ public class Post {
     private String content;     // 帖子内容
     private String author;      // 作者用户名
     private String forum;       // 所属版块
+    private String subForum;    // 所属子板块
     private String tags;        // 标签
     private String createTime;  // 创建时间
     private int votes;          // 点赞数
@@ -24,11 +25,12 @@ public class Post {
         this.content = content;
         this.author = author;
         this.forum = forum;
+        this.subForum = "";
         this.tags = tags;
         this.createTime = createTime;
         this.votes = 0;
         this.comments = 0;
-        this.status = "pending";  // 新帖子默认为待审核状态
+        this.status = "pending";
         this.rejectReason = "";
     }
     
@@ -43,6 +45,8 @@ public class Post {
     public void setAuthor(String author) { this.author = author; }
     public String getForum() { return forum; }
     public void setForum(String forum) { this.forum = forum; }
+    public String getSubForum() { return subForum; }
+    public void setSubForum(String subForum) { this.subForum = subForum; }
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
     public String getCreateTime() { return createTime; }
