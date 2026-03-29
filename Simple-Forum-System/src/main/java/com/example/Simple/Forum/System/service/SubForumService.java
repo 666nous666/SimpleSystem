@@ -30,11 +30,23 @@ public class SubForumService {
         return subForumRepository.findByCreator(creator);
     }
 
+    /**
+     * 创建子版块
+     * 验证参数合法性后创建子版块对象并保存到数据库
+     *
+     * @param name 子版块名称，不能为空
+     * @param description 子版块描述，可以为空
+     * @param parentForum 父版块名称，不能为空
+     * @param creator 创建者用户名，不能为空
+     * @return SubForum 创建成功的子版块对象；如果参数验证失败则返回 null
+     */
     public SubForum createSubForum(String name, String description, String parentForum, String creator) {
+        // 验证子版块名称不能为空
         if (name == null || name.trim().isEmpty()) {
             return null;
         }
         
+        // 创建子版块对象并设置基本信息
         SubForum subForum = new SubForum();
         subForum.setName(name.trim());
         subForum.setDescription(description != null ? description.trim() : "");
@@ -42,6 +54,7 @@ public class SubForumService {
         subForum.setCreator(creator);
         subForum.setPostCount(0);
         
+        // 调用数据仓库层保存子版块
         return subForumRepository.save(subForum);
     }
 
