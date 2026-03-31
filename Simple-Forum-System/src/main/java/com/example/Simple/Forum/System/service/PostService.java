@@ -18,4 +18,13 @@ public interface PostService {
     List<Post> getPendingPosts();
     Post approvePost(String id);
     Post rejectPost(String id, String reason);
+
+    // 举报相关方法
+    List<Post> getReportedPosts();
+    Post reportPost(String id, String reason);
+    Post handleReport(String id, boolean confirmed);
+    
+    // 互动相关方法
+    Post toggleLike(String id, String username);
+    Post addComment(String postId, String author, String content);
 }
