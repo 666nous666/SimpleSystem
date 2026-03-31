@@ -237,4 +237,64 @@ public class PostController {
             );
         }
     }
+    
+    // 点赞/取消点赞
+    @PutMapping("/like/{id}")
+    public Map<String, Object> toggleLike(@PathVariable String id, @RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        if (username == null || username.isEmpty()) {
+            return Map.of(
+                "success", false,
+                "message", "用户名不能为空"
+            );
+        }
+        
+        Post post = postService.toggleLike(id, username);
+        if (post != null) {
+            return Map.of(
+                "success", true,
+                "message", post.getLikedUsers().contains(username) ? "点赞成功" : "已取消点赞",
+                "post", post
+            );
+        } else {
+            return Map.of(
+                "success", false,
+                "message", "帖子不存在"
+            );
+        }
+    }
+    
+    // 添加评论
+    @PostMapping("/comment/{id}")
+    public Map<String, Object> addComment(@PathVariable String id, @RequestBody Map<String, String> request) {
+        String author = request.get("author");
+        String content = request.get("content");
+        
+        if (author == null || author.isEmpty()) {
+            return Map.of(
+                "success", false,
+                "message", "作者不能为空"
+            );
+        }
+        if (content == null || content.isEmpty()) {
+            return Map.of(
+                "success", false,
+                "message", "评论内容不能为空"
+            );
+        }
+        
+        Post post = postService.addComment(id, author, content);
+        if (post != null) {
+            return Map.of(
+                "success", true,
+                "message", "评论成功",
+                "post", post
+            );
+        } else {
+            return Map.of(
+                "success", false,
+                "message", "帖子不存在"
+            );
+        }
+    }
 }

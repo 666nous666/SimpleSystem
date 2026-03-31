@@ -16,11 +16,14 @@ public class Post {
     private String tags;        // 标签
     private String createTime;  // 创建时间
     private int votes;          // 点赞数
-    private int comments;       // 评论数
     private String status;      // 审核状态：pending-待审核，approved-已通过，rejected-已驳回，reported-被举报
     private String rejectReason; // 驳回理由
+    
 
     private String reportReason; // 举报理由
+    
+    private java.util.List<String> likedUsers; // 点赞用户列表
+    private java.util.List<Comment> comments; // 评论列表
     
 
     
@@ -36,9 +39,22 @@ public class Post {
         this.tags = tags;
         this.createTime = createTime;
         this.votes = 0;
-        this.comments = 0;
         this.status = "pending";  // 新帖子默认为待审核状态
         this.rejectReason = "";
+        this.likedUsers = new java.util.ArrayList<>();
+        this.comments = new java.util.ArrayList<>();
+    }
+
+    // 评论内部类
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class Comment {
+        private String id;
+        private String postId;
+        private String author;
+        private String content;
+        private String createTime;
     }
 
 

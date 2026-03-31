@@ -23,5 +23,8 @@ public interface PostService {
     List<Post> getReportedPosts();
     Post reportPost(String id, String reason);
     Post handleReport(String id, boolean confirmed);
-
+    
+    // 互动相关方法
+    Post toggleLike(String id, String username);
+    Post addComment(String postId, String author, String content);
 }

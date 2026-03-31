@@ -152,6 +152,18 @@ public class PostRepository {
                             post.setRejectReason(parts[9]);
                         }
                         
+                        if (parts.length >= 11) {
+                            post.setReportReason(parts[10]);
+                        }
+                        
+                        if (parts.length >= 12) {
+                            post.setLikedUsers(deserializeList(parts[11]));
+                        }
+                        
+                        if (parts.length >= 13) {
+                            post.setComments(deserializeComments(parts[12]));
+                        }
+                        
                         postDatabase.put(id, post);
                         
                         long currentId = Long.parseLong(id);
@@ -172,7 +184,7 @@ public class PostRepository {
         try {
             List<String> lines = new ArrayList<>();
             for (Post post : postDatabase.values()) {
-                String line = String.format("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s|%s",
+                String line = String.format("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|%s",
                         post.getId(),
                         post.getTitle(),
                         post.getContent(),
@@ -183,7 +195,9 @@ public class PostRepository {
                         post.getVotes(),
                         post.getStatus() != null ? post.getStatus() : "pending",
                         post.getRejectReason() != null ? post.getRejectReason() : "",
-                        post.getReportReason() != null ? post.getReportReason() : ""
+                        post.getReportReason() != null ? post.getReportReason() : "",
+                        serializeList(post.getLikedUsers()),
+                        serializeComments(post.getComments())
                 );
                 lines.add(line);
             }
@@ -192,5 +206,46 @@ public class PostRepository {
         } catch (IOException e) {
             System.err.println("保存帖子数据失败：" + e.getMessage());
         }
+    }
+    
+    // 序列化列表
+    private String serializeList(java.util.List<String> list) {
+        if (list == null || list.isEmpty()) return "";
+        return String.join(",", list);
+    }
+    
+    // 反序列化列表
+    private java.util.List<String> deserializeList(String str) {
+        if (str == null || str.isEmpty()) return new java.util.ArrayList<>();
+        return new java.util.ArrayList<>(java.util.Arrays.asList(str.split(",")));
+    }
+    
+    // 序列化评论列表
+    private String serializeComments(java.util.List<Post.Comment> comments) {
+        if (comments == null || comments.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < comments.size(); i++) {
+            Post.Comment c = comments.get(i);
+            sb.append(c.getId()).append("^").append(c.getPostId()).append("^")
+              .append(c.getAuthor()).append("^").append(c.getContent()).append("^")
+              .append(c.getCreateTime());
+            if (i < comments.size() - 1) sb.append(";");
+        }
+        return sb.toString();
+    }
+    
+    // 反序列化评论列表
+    private java.util.List<Post.Comment> deserializeComments(String str) {
+        java.util.List<Post.Comment> comments = new java.util.ArrayList<>();
+        if (str == null || str.isEmpty()) return comments;
+        
+        String[] commentStrs = str.split(";");
+        for (String commentStr : commentStrs) {
+            String[] parts = commentStr.split("\\^");
+            if (parts.length >= 5) {
+                comments.add(new Post.Comment(parts[0], parts[1], parts[2], parts[3], parts[4]));
+            }
+        }
+        return comments;
     }
 }

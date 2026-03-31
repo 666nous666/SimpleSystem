@@ -136,4 +136,44 @@ public class PostServiceImpl implements PostService {
         }
         return null;
     }
+    
+    @Override
+    public Post toggleLike(String id, String username) {
+        Optional<Post> optionalPost = postRepository.findById(id);
+        if (optionalPost.isPresent()) {
+            Post post = optionalPost.get();
+            java.util.List<String> likedUsers = post.getLikedUsers();
+            
+            if (likedUsers.contains(username)) {
+                // 取消点赞
+                likedUsers.remove(username);
+                post.setVotes(likedUsers.size());
+            } else {
+                // 添加点赞
+                likedUsers.add(username);
+                post.setVotes(likedUsers.size());
+            }
+            return postRepository.save(post);
+        }
+        return null;
+    }
+    
+    @Override
+    public Post addComment(String postId, String author, String content) {
+        Optional<Post> optionalPost = postRepository.findById(postId);
+        if (optionalPost.isPresent()) {
+            Post post = optionalPost.get();
+            
+            String commentId = String.valueOf(System.currentTimeMillis());
+            String createTime = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            
+            Post.Comment comment = new Post.Comment(commentId, postId, author, content, createTime);
+            post.getComments().add(comment);
+            post.setComments(post.getComments()); // 触发保存
+            
+            return postRepository.save(post);
+        }
+        return null;
+    }
 }
