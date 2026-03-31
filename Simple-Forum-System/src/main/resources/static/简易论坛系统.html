@@ -96,6 +96,31 @@
 
         <div id="forums" class="tab-content">
             <div class="card"><h2 class="card-title">论坛板块</h2><div id="forumList"></div></div>
+            
+            <!-- 子板块列表视图 -->
+            <div id="subforum-view" style="display: none;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="card-title" id="currentForumTitle">子板块</h2>
+                        <div>
+                            <button onclick="prepareCreateSubForum(currentParentForum)" class="btn" style="background-color: var(--primary); color: white; padding: 8px 16px; margin-right: 10px;" id="createSubForumBtn">创建子板块</button>
+                            <button onclick="backToForumList()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px;">返回板块列表</button>
+                        </div>
+                    </div>
+                    <div id="subForumList"></div>
+                </div>
+            </div>
+            
+            <!-- 子板块帖子列表视图 -->
+            <div id="subForumPosts" style="display: none;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="card-title" id="currentSubForumTitle">帖子列表</h2>
+                        <button onclick="closeSubForumPosts()" class="btn" style="background-color: var(--gray); color: white; padding: 8px 16px;">返回子板块</button>
+                    </div>
+                    <div id="subForumPostList"></div>
+                </div>
+            </div>
         </div>
 
         <div id="new-post" class="tab-content">
@@ -474,9 +499,11 @@
         ).join('');
 
         document.getElementById('forumList').innerHTML = mockData.forums.map(f => 
-            `<div class="post-item">
-                <div class="post-title">${f.name}</div>
-                <div class="post-meta">${f.desc} • ${f.posts}帖子</div>
+            `<div class="post-item" style="cursor: pointer;" onclick="viewSubForums('${f.name}')">
+                <div>
+                    <div class="post-title">${f.name}</div>
+                    <div class="post-meta">${f.desc} • ${f.posts}帖子</div>
+                </div>
             </div>`
         ).join('');
 
@@ -737,10 +764,10 @@
     async function viewSubForums(forumName) {
         currentParentForum = forumName;
 
-        document.querySelectorAll('#forums .card').forEach(card => card.style.display = 'none');
+        document.getElementById('forumList').parentElement.style.display = 'none';
         document.getElementById('subforum-view').style.display = 'block';
-        document.getElementById('currentForumTitle').textContent = forumName + ' - 子板块';
         document.getElementById('subForumPosts').style.display = 'none';
+        document.getElementById('currentForumTitle').textContent = forumName + ' - 子板块';
 
         const isModerator = currentUser.level <= 1;
         document.getElementById('createSubForumBtn').style.display = isModerator ? 'inline-block' : 'none';
@@ -750,8 +777,9 @@
 
     // 返回板块列表
     function backToForumList() {
-        document.querySelectorAll('#forums .card').forEach(card => card.style.display = 'block');
+        document.getElementById('forumList').parentElement.style.display = '';
         document.getElementById('subforum-view').style.display = 'none';
+        document.getElementById('subForumPosts').style.display = 'none';
         currentParentForum = null;
     }
 
@@ -800,11 +828,15 @@
         if (!currentParentForum) return;
 
         try {
+            console.log('正在加载父板块:', currentParentForum);
             const response = await fetch(`/api/subforum/parent/${encodeURIComponent(currentParentForum)}`);
             const data = await response.json();
+            
+            console.log('API 返回数据:', data);
 
             if (data.success) {
                 const subForums = data.subForums;
+                console.log('子板块数量:', subForums.length);
                 const isModerator = currentUser.level <= 1;
 
                 if (subForums.length === 0) {
@@ -828,6 +860,10 @@
                         </div>
                     </div>`
                 ).join('');
+                console.log('子板块列表已渲染');
+            } else {
+                console.error('API 返回失败:', data.message);
+                document.getElementById('subForumList').innerHTML = '<p style="color: var(--danger); padding: 20px; text-align: center;">加载失败：' + (data.message || '未知错误') + '</p>';
             }
         } catch (error) {
             console.error('加载子板块失败:', error);
