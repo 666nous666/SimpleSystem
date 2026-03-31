@@ -19,7 +19,7 @@ public class PostController {
     @Autowired
     private PostService postService;
 
-    // 获取所有帖子（按时间倒序）
+    // 获取所有帖子
     @GetMapping("/all")
     public Map<String, Object> getAllPosts() {
         List<Post> posts = postService.getAllPosts();

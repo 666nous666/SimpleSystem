@@ -1,12 +1,9 @@
 package com.example.Simple.Forum.System.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 // 帖子实体类，存储论坛帖子的所有信息
 @Data
-@NoArgsConstructor
 public class Post {
     private String id;          // 帖子唯一标识
     private String title;       // 帖子标题
@@ -25,9 +22,15 @@ public class Post {
     private java.util.List<String> likedUsers; // 点赞用户列表
     private java.util.List<Comment> comments; // 评论列表
     
-
+    // 无参构造函数
+    public Post() {
+        this.votes = 0;
+        this.status = "pending";
+        this.rejectReason = "";
+        this.likedUsers = new java.util.ArrayList<>();
+        this.comments = new java.util.ArrayList<>();
+    }
     
-
     // 构造函数：初始化帖子基本信息
     public Post(String id, String title, String content, String author, String forum, 
                 String tags, String createTime) {
@@ -56,6 +59,5 @@ public class Post {
         private String content;
         private String createTime;
     }
-
 
 }

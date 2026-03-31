@@ -96,6 +96,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+    //获取所有被举报的帖子列表
     @Override
     public List<Post> getReportedPosts() {
         return postRepository.findAll().stream()
@@ -103,6 +104,7 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
     }
 
+    //举报指定的帖子
     @Override
     public Post reportPost(String id, String reason) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -118,6 +120,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+    //处理举报
     @Override
     public Post handleReport(String id, boolean confirmed) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -175,5 +178,13 @@ public class PostServiceImpl implements PostService {
             return postRepository.save(post);
         }
         return null;
+    }
+
+    @Override
+    public List<Post> getHandledReports() {
+        return postRepository.findAll().stream()
+                .filter(p -> "violated".equals(p.getStatus()) || 
+                            ("approved".equals(p.getStatus()) && p.getReportReason() != null && !p.getReportReason().isEmpty()))
+                .collect(Collectors.toList());
     }
 }

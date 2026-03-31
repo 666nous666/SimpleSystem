@@ -1,0 +1,7 @@
+com\example\Simple\Forum\System\model\Post.class
+com\example\Simple\Forum\System\model\SubForum.class
+com\example\Simple\Forum\System\model\User.class
+com\example\Simple\Forum\System\service\UserService.class
+com\example\Simple\Forum\System\repository\SubForumRepository.class
+com\example\Simple\Forum\System\model\Post$Comment.class
+com\example\Simple\Forum\System\service\SubForumService.class
