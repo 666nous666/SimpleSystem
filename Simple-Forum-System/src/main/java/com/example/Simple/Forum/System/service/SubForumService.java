@@ -30,16 +30,7 @@ public class SubForumService {
         return subForumRepository.findByCreator(creator);
     }
 
-    /**
-     * 创建子版块
-     * 验证参数合法性后创建子版块对象并保存到数据库
-     *
-     * @param name 子版块名称，不能为空
-     * @param description 子版块描述，可以为空
-     * @param parentForum 父版块名称，不能为空
-     * @param creator 创建者用户名，不能为空
-     * @return SubForum 创建成功的子版块对象；如果参数验证失败则返回 null
-     */
+    //创建子版块
     public SubForum createSubForum(String name, String description, String parentForum, String creator) {
         // 验证子版块名称不能为空
         if (name == null || name.trim().isEmpty()) {
@@ -57,7 +48,7 @@ public class SubForumService {
         // 调用数据仓库层保存子版块
         return subForumRepository.save(subForum);
     }
-
+    //更新子版块
     public SubForum updateSubForum(String id, String name, String description) {
         Optional<SubForum> optionalSubForum = subForumRepository.findById(id);
         if (optionalSubForum.isPresent()) {
@@ -72,7 +63,7 @@ public class SubForumService {
         }
         return null;
     }
-
+    //删除子版块
     public boolean deleteSubForum(String id) {
         if (subForumRepository.findById(id).isPresent()) {
             subForumRepository.delete(id);
