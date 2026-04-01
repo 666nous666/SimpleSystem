@@ -18,6 +18,7 @@ public class SubForumController {
     @Autowired
     private SubForumService subForumService;
 
+    // 获取所有子版块列表
     @GetMapping("/all")
     public Map<String, Object> getAllSubForums() {
         List<SubForum> subForums = subForumService.getAllSubForums();
@@ -27,6 +28,7 @@ public class SubForumController {
         );
     }
 
+    // 根据 ID 获取子版块详情
     @GetMapping("/{id}")
     public Map<String, Object> getSubForumById(@PathVariable String id) {
         Optional<SubForum> subForum = subForumService.getSubForumById(id);
@@ -43,6 +45,7 @@ public class SubForumController {
         }
     }
 
+    // 根据父版块获取子版块列表
     @GetMapping("/parent/{parentForum}")
     public Map<String, Object> getSubForumsByParent(@PathVariable String parentForum) {
         List<SubForum> subForums = subForumService.getSubForumsByParent(parentForum);
@@ -52,20 +55,7 @@ public class SubForumController {
         );
     }
 
-    /**
-     * 创建子版块
-     * 处理前端发送的创建子版块请求，验证参数合法性后调用服务层创建子版块
-     *
-     * @param request 请求体参数，包含以下字段：
-     *                - name: 子版块名称（必填）
-     *                - description: 子版块描述（可选，默认为空字符串）
-     *                - parentForum: 父版块名称（必填）
-     *                - creator: 创建者用户名（必填）
-     * @return Map<String, Object> 响应结果，包含以下字段：
-     *         - success: 操作是否成功，true 表示成功，false 表示失败
-     *         - message: 操作结果消息提示
-     *         - subForum: 创建成功的子版块对象（仅在 success=true 时返回）
-     */
+    // 创建子版块
     @PostMapping("/create")
     public Map<String, Object> createSubForum(@RequestBody Map<String, String> request) {
         // 从请求体中提取子版块基本信息
@@ -116,6 +106,7 @@ public class SubForumController {
         }
     }
 
+    // 更新子版块信息
     @PutMapping("/update/{id}")
     public Map<String, Object> updateSubForum(@PathVariable String id,
                                               @RequestBody Map<String, String> request) {
@@ -137,6 +128,7 @@ public class SubForumController {
         }
     }
 
+    // 删除指定子版块
     @DeleteMapping("/delete/{id}")
     public Map<String, Object> deleteSubForum(@PathVariable String id) {
         boolean deleted = subForumService.deleteSubForum(id);

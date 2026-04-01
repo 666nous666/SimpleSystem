@@ -16,26 +16,31 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private PostRepository postRepository;
 
+    // 获取所有帖子列表
     @Override
     public List<Post> getAllPosts() {
         return postRepository.findAll();
     }
 
+    // 根据 ID 获取帖子详情
     @Override
     public Optional<Post> getPostById(String id) {
         return postRepository.findById(id);
     }
 
+    // 根据版块获取帖子列表
     @Override
     public List<Post> getPostsByForum(String forum) {
         return postRepository.findByForum(forum);
     }
 
+    // 根据作者获取帖子列表
     @Override
     public List<Post> getPostsByAuthor(String author) {
         return postRepository.findByAuthor(author);
     }
 
+    // 创建新帖子并设置待审核状态
     @Override
     public Post createPost(String title, String content, String author, String forum, String tags) {
         Post post = new Post();
@@ -48,6 +53,7 @@ public class PostServiceImpl implements PostService {
         return postRepository.save(post);
     }
 
+    // 更新指定帖子的信息
     @Override
     public Post updatePost(String id, String title, String content, String forum, String tags) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -62,16 +68,19 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+    // 删除指定帖子
     @Override
     public void deletePost(String id) {
         postRepository.delete(id);
     }
     
+    // 获取所有待审核的帖子列表
     @Override
     public List<Post> getPendingPosts() {
         return postRepository.findPendingPosts();
     }
     
+    // 通过帖子审核，将状态改为 approved
     @Override
     public Post approvePost(String id) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -84,6 +93,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
     
+    // 驳回帖子审核并设置理由
     @Override
     public Post rejectPost(String id, String reason) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -96,7 +106,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
-    //获取所有被举报的帖子列表
+    // 获取所有被举报的帖子列表
     @Override
     public List<Post> getReportedPosts() {
         return postRepository.findAll().stream()
@@ -104,7 +114,7 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
     }
 
-    //举报指定的帖子
+    // 举报指定帖子，将状态改为 reported
     @Override
     public Post reportPost(String id, String reason) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -120,7 +130,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
-    //处理举报
+    // 处理用户举报：确认违规或恢复帖子
     @Override
     public Post handleReport(String id, boolean confirmed) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -140,6 +150,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
     
+    // 切换点赞状态：点赞或取消点赞
     @Override
     public Post toggleLike(String id, String username) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -161,6 +172,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
     
+    // 为帖子添加评论
     @Override
     public Post addComment(String postId, String author, String content) {
         Optional<Post> optionalPost = postRepository.findById(postId);
@@ -180,6 +192,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+    // 获取已处理过的举报帖子列表
     @Override
     public List<Post> getHandledReports() {
         return postRepository.findAll().stream()

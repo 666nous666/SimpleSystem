@@ -20,7 +20,7 @@ public class PostRepository {
     private final String dataFilePath = "data/posts.txt";
     private final AtomicLong idGenerator = new AtomicLong(1);  // 自动生成帖子 ID
 
-    // 构造方法：初始化数据目录、加载数据、创建测试帖子
+    // 构造函数：初始化数据目录、加载数据、创建测试帖子
     public PostRepository() {
         ensureDataDirectoryExists();
         loadFromFile();
@@ -35,7 +35,7 @@ public class PostRepository {
         }
     }
 
-    // 初始化测试帖子
+    // 初始化测试帖子数据
     private void initTestPosts() {
         if (postDatabase.isEmpty()) {
             createTestPost("分享 Java 学习路径", "从基础到高级：1.Java 基础 2.面向对象 3.集合框架 4.IO 流 5.多线程", "张三", "技术讨论", "Java,学习");
@@ -57,19 +57,19 @@ public class PostRepository {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
-    // 查询所有帖子（按时间倒序）
+    // 查询所有帖子（按时间倒序排列）
     public List<Post> findAll() {
         List<Post> posts = new ArrayList<>(postDatabase.values());
         posts.sort((p1, p2) -> p2.getCreateTime().compareTo(p1.getCreateTime()));
         return posts;
     }
 
-    // 根据 ID 查询帖子
+    // 根据 ID 查询帖子详情
     public Optional<Post> findById(String id) {
         return Optional.ofNullable(postDatabase.get(id));
     }
 
-    // 根据版块查询帖子
+    // 根据版块查询帖子列表
     public List<Post> findByForum(String forum) {
         List<Post> posts = new ArrayList<>();
         for (Post post : postDatabase.values()) {
@@ -80,7 +80,7 @@ public class PostRepository {
         return posts;
     }
 
-    // 根据作者查询帖子
+    // 根据作者查询帖子列表
     public List<Post> findByAuthor(String author) {
         List<Post> posts = new ArrayList<>();
         for (Post post : postDatabase.values()) {
@@ -91,7 +91,7 @@ public class PostRepository {
         return posts;
     }
 
-    // 查询待审核帖子
+    // 查询所有待审核的帖子
     public List<Post> findPendingPosts() {
         List<Post> posts = new ArrayList<>();
         for (Post post : postDatabase.values()) {
@@ -102,7 +102,7 @@ public class PostRepository {
         return posts;
     }
 
-    // 保存帖子（新增或更新）
+    // 保存帖子（新增或更新）到数据库
     public Post save(Post post) {
         if (post.getId() == null || post.getId().isEmpty()) {
             String id = String.valueOf(idGenerator.getAndIncrement());
@@ -114,13 +114,13 @@ public class PostRepository {
         return post;
     }
 
-    // 删除帖子
+    // 删除指定帖子
     public void delete(String id) {
         postDatabase.remove(id);
         saveToFile();
     }
 
-    // 从文件加载帖子数据
+    // 从文件加载帖子数据到内存
     private void loadFromFile() {
         File file = new File(dataFilePath);
         if (file.exists()) {
@@ -208,19 +208,19 @@ public class PostRepository {
         }
     }
     
-    // 序列化列表
+    // 序列化点赞用户列表为字符串
     private String serializeList(java.util.List<String> list) {
         if (list == null || list.isEmpty()) return "";
         return String.join(",", list);
     }
     
-    // 反序列化列表
+    // 反序列化字符串为点赞用户列表
     private java.util.List<String> deserializeList(String str) {
         if (str == null || str.isEmpty()) return new java.util.ArrayList<>();
         return new java.util.ArrayList<>(java.util.Arrays.asList(str.split(",")));
     }
     
-    // 序列化评论列表
+    // 序列化评论列表为字符串
     private String serializeComments(java.util.List<Post.Comment> comments) {
         if (comments == null || comments.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
@@ -234,7 +234,7 @@ public class PostRepository {
         return sb.toString();
     }
     
-    // 反序列化评论列表
+    // 反序列化字符串为评论列表
     private java.util.List<Post.Comment> deserializeComments(String str) {
         java.util.List<Post.Comment> comments = new java.util.ArrayList<>();
         if (str == null || str.isEmpty()) return comments;

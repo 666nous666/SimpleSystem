@@ -8,7 +8,7 @@ import java.util.Base64;
 // 密码工具类：提供密码加密、验证等功能（SHA-256+ 盐值）
 public class PasswordUtil {
 
-    // 生成随机盐值（16 字节），增加密码安全性
+    // 生成随机盐值（16 字节），用于密码加密
     public static String generateSalt() {
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[16];
@@ -16,7 +16,7 @@ public class PasswordUtil {
         return Base64.getEncoder().encodeToString(salt);
     }
 
-    // 计算密码哈希值（SHA-256 算法）
+    // 使用 SHA-256 算法计算密码的哈希值
     public static String hashPassword(String password, String salt) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

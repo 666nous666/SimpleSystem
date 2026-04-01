@@ -19,7 +19,7 @@ public class PostController {
     @Autowired
     private PostService postService;
 
-    // 获取所有帖子
+    // 获取所有帖子列表
     @GetMapping("/all")
     public Map<String, Object> getAllPosts() {
         List<Post> posts = postService.getAllPosts();
@@ -46,7 +46,7 @@ public class PostController {
         }
     }
 
-    // 根据版块获取帖子
+    // 根据版块获取帖子列表
     @GetMapping("/forum/{forum}")
     public Map<String, Object> getPostsByForum(@PathVariable String forum) {
         List<Post> posts = postService.getPostsByForum(forum);
@@ -56,7 +56,7 @@ public class PostController {
         );
     }
 
-    // 根据作者获取帖子
+    // 根据作者获取帖子列表
     @GetMapping("/author/{author}")
     public Map<String, Object> getPostsByAuthor(@PathVariable String author) {
         List<Post> posts = postService.getPostsByAuthor(author);
@@ -90,7 +90,7 @@ public class PostController {
         );
     }
 
-    // 更新帖子
+    // 更新指定帖子的信息
     @PutMapping("/update/{id}")
     public Map<String, Object> updatePost(@PathVariable String id, 
                                           @RequestBody Map<String, String> request) {
@@ -114,7 +114,7 @@ public class PostController {
         }
     }
 
-    // 删除帖子
+    // 删除指定帖子
     @DeleteMapping("/delete/{id}")
     public Map<String, Object> deletePost(@PathVariable String id) {
         postService.deletePost(id);
@@ -124,7 +124,7 @@ public class PostController {
         );
     }
     
-    // 获取待审核帖子列表
+    // 获取待审核的帖子列表
     @GetMapping("/pending")
     public Map<String, Object> getPendingPosts() {
         List<Post> posts = postService.getPendingPosts();
@@ -134,7 +134,7 @@ public class PostController {
         );
     }
     
-    // 获取已通过帖子列表
+    // 获取已通过审核的帖子列表
     @GetMapping("/approved")
     public Map<String, Object> getApprovedPosts() {
         List<Post> posts = postService.getAllPosts().stream()
@@ -164,7 +164,7 @@ public class PostController {
         }
     }
     
-    // 驳回帖子审核
+    // 驳回帖子审核并设置理由
     @PutMapping("/reject/{id}")
     public Map<String, Object> rejectPost(@PathVariable String id,
                                           @RequestBody Map<String, String> request) {
@@ -194,7 +194,7 @@ public class PostController {
         );
     }
 
-    // 举报帖子
+    // 举报指定帖子
     @PutMapping("/report/{id}")
     public Map<String, Object> reportPost(@PathVariable String id,
                                       @RequestBody Map<String, String> request) {
@@ -219,7 +219,7 @@ public class PostController {
         }
     }
 
-    // 处理举报
+    // 处理用户举报（确认违规或举报不实）
     @PutMapping("/handle-report/{id}")
     public Map<String, Object> handleReport(@PathVariable String id,
                                         @RequestBody Map<String, Boolean> request) {
@@ -238,7 +238,7 @@ public class PostController {
         }
     }
     
-    // 点赞/取消点赞
+    // 点赞或取消点赞帖子
     @PutMapping("/like/{id}")
     public Map<String, Object> toggleLike(@PathVariable String id, @RequestBody Map<String, String> request) {
         String username = request.get("username");
@@ -264,7 +264,7 @@ public class PostController {
         }
     }
     
-    // 添加评论
+    // 为帖子添加评论
     @PostMapping("/comment/{id}")
     public Map<String, Object> addComment(@PathVariable String id, @RequestBody Map<String, String> request) {
         String author = request.get("author");

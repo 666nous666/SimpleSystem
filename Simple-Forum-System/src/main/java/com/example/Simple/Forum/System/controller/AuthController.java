@@ -34,7 +34,7 @@ public class AuthController {
         return userService.register(username, password, level);
     }
 
-    // 测试接口：获取所有用户（仅用于开发测试）
+    // 获取所有用户列表（测试接口）
     @GetMapping("/users")
     public Map<String, Object> getAllUsers() {
         // 这里应该有权限验证，简单起见直接返回

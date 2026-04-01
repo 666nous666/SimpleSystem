@@ -19,12 +19,14 @@ public class SubForumRepository {
     private final String dataFilePath = "data/subforums.txt";
     private final AtomicLong idGenerator = new AtomicLong(1);
 
+    // 构造函数：初始化数据目录、加载数据、创建测试子版块
     public SubForumRepository() {
         ensureDataDirectoryExists();
         loadFromFile();
         initTestSubForums();
     }
 
+    // 确保数据目录存在
     private void ensureDataDirectoryExists() {
         File dataDir = new File("data");
         if (!dataDir.exists()) {
@@ -32,6 +34,7 @@ public class SubForumRepository {
         }
     }
 
+    // 初始化测试子版块数据
     private void initTestSubForums() {
         if (subForumDatabase.isEmpty()) {
             createTestSubForum("日常闲聊", "分享日常生活点滴", "生活分享", "管理员");
@@ -43,26 +46,31 @@ public class SubForumRepository {
         }
     }
 
+    // 创建测试子版块
     private void createTestSubForum(String name, String description, String parentForum, String creator) {
         String id = String.valueOf(idGenerator.getAndIncrement());
         SubForum subForum = new SubForum(id, name, description, parentForum, creator, 0, getCurrentTime());
         subForumDatabase.put(id, subForum);
     }
 
+    // 获取当前时间（格式化字符串）
     private String getCurrentTime() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
+    // 查询所有子版块（按时间倒序排列）
     public List<SubForum> findAll() {
         List<SubForum> subForums = new ArrayList<>(subForumDatabase.values());
         subForums.sort((s1, s2) -> s2.getCreateTime().compareTo(s1.getCreateTime()));
         return subForums;
     }
 
+    // 根据 ID 查询子版块详情
     public Optional<SubForum> findById(String id) {
         return Optional.ofNullable(subForumDatabase.get(id));
     }
 
+    // 根据父版块查询子版块列表
     public List<SubForum> findByParentForum(String parentForum) {
         List<SubForum> subForums = new ArrayList<>();
         for (SubForum subForum : subForumDatabase.values()) {
@@ -73,6 +81,7 @@ public class SubForumRepository {
         return subForums;
     }
 
+    // 根据创建者查询子版块列表
     public List<SubForum> findByCreator(String creator) {
         List<SubForum> subForums = new ArrayList<>();
         for (SubForum subForum : subForumDatabase.values()) {
@@ -83,6 +92,7 @@ public class SubForumRepository {
         return subForums;
     }
 
+    // 保存子版块（新增或更新）到数据库
     public SubForum save(SubForum subForum) {
         if (subForum.getId() == null || subForum.getId().isEmpty()) {
             String id = String.valueOf(idGenerator.getAndIncrement());
@@ -94,11 +104,13 @@ public class SubForumRepository {
         return subForum;
     }
 
+    // 删除指定子版块
     public void delete(String id) {
         subForumDatabase.remove(id);
         saveToFile();
     }
 
+    // 增加子版块的帖子数量
     public void incrementPostCount(String id) {
         SubForum subForum = subForumDatabase.get(id);
         if (subForum != null) {
@@ -107,6 +119,7 @@ public class SubForumRepository {
         }
     }
 
+    // 从文件加载子版块数据到内存
     private void loadFromFile() {
         File file = new File(dataFilePath);
         if (file.exists()) {
@@ -143,6 +156,7 @@ public class SubForumRepository {
         }
     }
 
+    // 保存子版块数据到文件
     private void saveToFile() {
         try {
             List<String> lines = new ArrayList<>();

@@ -17,6 +17,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
+    // 处理用户登录：验证用户名和密码，返回用户信息和权限
     @Override
     public Map<String, Object> login(String username, String password) {
         Map<String, Object> result = new HashMap<>();
@@ -76,6 +77,7 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
+    // 处理用户注册：创建新用户并保存到数据库
     @Override
     public Map<String, Object> register(String username, String password, int level) {
         Map<String, Object> result = new HashMap<>();
@@ -132,11 +134,13 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
+    // 根据用户名查找用户
     @Override
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
+    // 获取用户的权限等级
     @Override
     public int getUserLevel(String username) {
         Optional<User> userOpt = userRepository.findByUsername(username);

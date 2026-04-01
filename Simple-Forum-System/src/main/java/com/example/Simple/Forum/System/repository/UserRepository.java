@@ -17,7 +17,7 @@ public class UserRepository {
     private final ConcurrentHashMap<String, User> userDatabase = new ConcurrentHashMap<>();
     private final String dataFilePath = "data/users.txt";
 
-    // 构造方法：初始化数据目录、加载数据、创建测试用户
+    // 构造函数：初始化数据目录、加载数据、创建测试用户
     public UserRepository() {
         ensureDataDirectoryExists();
         loadFromFile();
@@ -69,7 +69,7 @@ public class UserRepository {
         return Optional.ofNullable(userDatabase.get(username));
     }
 
-    // 保存用户（如果已存在则返回 false）
+    // 保存用户到数据库（如果已存在则返回 false）
     public boolean save(User user) {
         if (userDatabase.containsKey(user.getUsername())) {
             return false;
@@ -79,7 +79,7 @@ public class UserRepository {
         return true;
     }
 
-    // 从文件加载用户数据
+    // 从文件加载用户数据到内存
     private void loadFromFile() {
         File file = new File(dataFilePath);
         if (file.exists()) {
